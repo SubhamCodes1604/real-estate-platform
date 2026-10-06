@@ -1,0 +1,64 @@
+.received-inquiries-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 50px 20px;
+}
+
+.received-inquiries-header {
+  margin-bottom: 35px;
+}
+
+.received-inquiries-header h1 {
+  margin-bottom: 8px;
+}
+
+.received-inquiries-header p {
+  margin: 0;
+}
+
+.received-inquiries-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.received-inquiry-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 28px;
+}
+
+.received-inquiry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.received-inquiry-header h2 {
+  margin: 0;
+}
+
+.buyer-message {
+  background: #f7f7f7;
+  padding: 18px;
+  border-radius: 8px;
+  margin-top: 15px;
+}
+
+.buyer-message p {
+  margin-bottom: 0;
+}
+
+.empty-received-inquiries {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 60px;
+  text-align: center;
+}
+
+.received-inquiries-error {
+  color: #b00020;
+}
