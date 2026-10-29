@@ -7,6 +7,9 @@ from .views import (
     PropertyUpdateView,
     PropertyDeleteView,
     ApprovePropertyView,
+    RejectPropertyView,
+    PendingPropertiesView,
+    AllPropertiesView,
     FeaturedPropertyListView,
     RecentPropertyListView,
     PropertyRecommendationView,
@@ -45,6 +48,21 @@ urlpatterns = [
         "approve/<int:pk>/",
         ApprovePropertyView.as_view(),
         name="property-approve"
+    ),
+    path(
+        "reject/<int:pk>/",
+        RejectPropertyView.as_view(),
+        name="property-reject"
+    ),
+    path(
+        "pending/",
+        PendingPropertiesView.as_view(),
+        name="pending-properties"
+    ),
+    path(
+        "all/",
+        AllPropertiesView.as_view(),
+        name="all-properties"
     ),
     path(
         "my-properties/",

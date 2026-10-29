@@ -5,6 +5,13 @@ import { useAuth } from "../context/AuthContext";
 import PropertyCard from "../components/PropertyCard";
 import "./Dashboard.css";
 
+const formatPrice = (price) => {
+  const num = Number(price);
+  if (num >= 10000000) return `₹ ${(num / 10000000).toFixed(2)} Cr`;
+  if (num >= 100000) return `₹ ${(num / 100000).toFixed(2)} L`;
+  return `₹ ${num.toLocaleString("en-IN")}`;
+};
+
 function Dashboard() {
   const { user } = useAuth();
 
@@ -17,6 +24,11 @@ function Dashboard() {
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(isAdmin);
   const [statsError, setStatsError] = useState("");
+
+  const [pendingProperties, setPendingProperties] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(isAdmin);
+  const [pendingError, setPendingError] = useState("");
+  const [actionLoadingId, setActionLoadingId] = useState(null);
 
   const [recommendations, setRecommendations] = useState([]);
   const [recommendationsLoading, setRecommendationsLoading] =
@@ -51,8 +63,104 @@ function Dashboard() {
       }
     };
 
+    const fetchPendingProperties = async () => {
+      try {
+        setPendingError("");
+
+        const response = await api.get(
+          "/properties/pending/"
+        );
+
+        const data = Array.isArray(response.data)
+          ? response.data
+          : response.data.results || [];
+
+        setPendingProperties(data);
+      } catch (error) {
+        console.error(
+          "Pending properties error:",
+          error
+        );
+
+        setPendingError(
+          error.response?.data?.detail ||
+          "Unable to load pending properties."
+        );
+      } finally {
+        setPendingLoading(false);
+      }
+    };
+
     fetchDashboardStats();
+    fetchPendingProperties();
   }, [isAdmin]);
+
+  const handleApproveProperty = async (propertyId) => {
+    setActionLoadingId(propertyId);
+
+    try {
+      await api.patch(
+        `/properties/approve/${propertyId}/`
+      );
+
+      setPendingProperties((current) =>
+        current.filter(
+          (prop) => prop.id !== propertyId
+        )
+      );
+
+      setStats((currentStats) => {
+        if (!currentStats) return currentStats;
+        return {
+          ...currentStats,
+          approved_properties:
+            currentStats.approved_properties + 1,
+        };
+      });
+    } catch (error) {
+      console.error(
+        "Approve property error:",
+        error
+      );
+
+      setPendingError(
+        error.response?.data?.error ||
+          error.response?.data?.detail ||
+          "Unable to approve property."
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleRejectProperty = async (propertyId) => {
+    setActionLoadingId(propertyId);
+
+    try {
+      await api.patch(
+        `/properties/reject/${propertyId}/`
+      );
+
+      setPendingProperties((current) =>
+        current.filter(
+          (prop) => prop.id !== propertyId
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Reject property error:",
+        error
+      );
+
+      setPendingError(
+        error.response?.data?.error ||
+          error.response?.data?.detail ||
+          "Unable to reject property."
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   useEffect(() => {
     if (!isUser) return;
@@ -165,6 +273,143 @@ function Dashboard() {
             <strong>{stats.total_inquiries}</strong>
           </div>
         </div>
+
+        {/* ========================= */}
+        {/* PENDING PROPERTIES */}
+        {/* ========================= */}
+
+        <section className="dashboard-pending-section">
+          <div className="dashboard-section-header">
+            <div>
+              <h2>Properties Awaiting Approval</h2>
+              <p>
+                Review and approve or reject newly
+                listed properties.
+              </p>
+            </div>
+          </div>
+
+          {pendingLoading && (
+            <div className="dashboard-loading">
+              <div className="dashboard-card-skeleton-grid">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    className="dashboard-card-skeleton"
+                    key={i}
+                  >
+                    <div className="skeleton-image"></div>
+                    <div className="skeleton-body">
+                      <div className="skeleton-line skeleton-line-medium"></div>
+                      <div className="skeleton-line skeleton-line-short"></div>
+                      <div className="skeleton-line skeleton-line-long"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {pendingError && (
+            <div className="dashboard-error-state">
+              <h3>Unable to load pending properties</h3>
+              <p>{pendingError}</p>
+            </div>
+          )}
+
+          {!pendingLoading &&
+            !pendingError &&
+            pendingProperties.length === 0 && (
+              <div className="dashboard-empty-state">
+                <h3>No pending properties</h3>
+                <p>
+                  All properties have been reviewed.
+                </p>
+              </div>
+            )}
+
+          {!pendingLoading &&
+            !pendingError &&
+            pendingProperties.length > 0 && (
+              <div className="dashboard-pending-list">
+                {pendingProperties.map((prop) => (
+                  <div
+                    className="dashboard-pending-card"
+                    key={prop.id}
+                  >
+                    <div className="dashboard-pending-image-wrap">
+                      {prop.image ? (
+                        <img
+                          src={prop.image}
+                          alt={prop.title}
+                          className="dashboard-pending-image"
+                        />
+                      ) : (
+                        <div className="dashboard-pending-no-image">
+                          No Image
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="dashboard-pending-content">
+                      <div className="dashboard-pending-top">
+                        <h3>{prop.title}</h3>
+                        <span className="dashboard-pending-status pending">
+                          Pending
+                        </span>
+                      </div>
+
+                      <p className="dashboard-pending-price">
+                        {formatPrice(prop.price)}
+                      </p>
+
+                      <p className="dashboard-pending-location">
+                        {prop.city}, {prop.state}
+                      </p>
+
+                      <div className="dashboard-pending-features">
+                        <span><strong>{prop.bedrooms}</strong> Beds</span>
+                        <span><strong>{prop.bathrooms}</strong> Baths</span>
+                        <span><strong>{Number(prop.area_sqft).toLocaleString()}</strong> sq.ft</span>
+                      </div>
+
+                      <div className="dashboard-pending-actions">
+                        <Link
+                          to={`/properties/${prop.id}`}
+                          className="dashboard-pending-view"
+                        >
+                          View Details
+                        </Link>
+                        <button
+                          type="button"
+                          className="dashboard-pending-approve"
+                          onClick={() =>
+                            handleApproveProperty(prop.id)
+                          }
+                          disabled={actionLoadingId === prop.id}
+                        >
+                          {actionLoadingId === prop.id
+                            ? "Processing..."
+                            : "Approve"}
+                        </button>
+                        <button
+                          type="button"
+                          className="dashboard-pending-reject"
+                          onClick={() =>
+                            handleRejectProperty(prop.id)
+                          }
+                          disabled={actionLoadingId === prop.id}
+                        >
+                          {actionLoadingId === prop.id
+                            ? "Processing..."
+                            : "Reject"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+        </section>
       </div>
     );
   }

@@ -148,6 +148,53 @@ class ApprovePropertyView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+
+class RejectPropertyView(APIView):
+
+    permission_classes = [IsAdminUser]
+
+    def patch(self, request, pk):
+
+        try:
+            property_obj = Property.objects.get(pk=pk)
+
+            property_obj.is_approved = False
+            property_obj.save()
+
+            return Response(
+                {"message": "Property rejected successfully"},
+                status=status.HTTP_200_OK
+            )
+
+        except Property.DoesNotExist:
+
+            return Response(
+                {"error": "Property not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+
+class PendingPropertiesView(generics.ListAPIView):
+
+    serializer_class = PropertySerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+
+        return Property.objects.filter(
+            is_approved=False
+        ).order_by("-created_at")
+
+
+class AllPropertiesView(generics.ListAPIView):
+
+    serializer_class = PropertySerializer
+    permission_classes = [IsAdminUser]
+
+    def get_queryset(self):
+
+        return Property.objects.all().order_by("-created_at")
+
 class MyPropertiesView(generics.ListAPIView):
 
     serializer_class = PropertySerializer
