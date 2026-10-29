@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Environment variables and secrets
+.env
+.env.*
+
+# Keep example configuration files
+!.env.example
+
+# Python cache files
+__pycache__/
+*.py[cod]

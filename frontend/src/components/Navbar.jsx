@@ -30,6 +30,10 @@ function Navbar() {
             Properties
           </Link>
 
+          <Link to="/questions">
+            Q&A
+          </Link>
+
           {!isAuthenticated ? (
             <>
               <Link to="/login">

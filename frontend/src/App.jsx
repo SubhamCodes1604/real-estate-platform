@@ -22,6 +22,8 @@ import ReceivedInquiries from "./pages/ReceivedInquiries";
 import CreateProperty from "./pages/CreateProperty";
 import EditProperty from "./pages/EditProperty";
 import AgentDashboard from "./pages/AgentDashboard";
+import Questions from "./pages/Questions";
+import QuestionDetails from "./pages/QuestionDetails";
 
 function App() {
   return (
@@ -61,6 +63,16 @@ function App() {
             <Route
               path="/properties/:id"
               element={<PropertyDetails />}
+            />
+
+            <Route
+              path="/questions"
+              element={<Questions />}
+            />
+
+            <Route
+              path="/questions/:id"
+              element={<QuestionDetails />}
             />
 
 
