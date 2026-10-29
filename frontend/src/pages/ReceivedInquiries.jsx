@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../services/api";
 import "./ReceivedInquiries.css";
 
@@ -19,18 +20,13 @@ function ReceivedInquiries() {
           : response.data.results || [];
 
         setInquiries(data);
-
-      } catch (error) {
-        console.error(
-          "Received inquiries error:",
-          error
-        );
+      } catch (err) {
+        console.error("Received inquiries error:", err);
 
         setError(
-          error.response?.data?.detail ||
-          "Unable to load received inquiries."
+          err.response?.data?.detail ||
+            "Unable to load received inquiries."
         );
-
       } finally {
         setLoading(false);
       }
@@ -42,8 +38,19 @@ function ReceivedInquiries() {
   if (loading) {
     return (
       <div className="received-inquiries-page">
-        <h1>Received Inquiries</h1>
-        <p>Loading inquiries...</p>
+        <div className="received-inquiries-header">
+          <h1>Received Inquiries</h1>
+          <p>View inquiries received for your properties.</p>
+        </div>
+        <div className="received-inquiries-skeleton-list">
+          {[1, 2, 3].map((i) => (
+            <div className="received-inquiries-skeleton-card" key={i}>
+              <div className="skeleton-line skeleton-line-medium"></div>
+              <div className="skeleton-line skeleton-line-long"></div>
+              <div className="skeleton-line skeleton-line-short"></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -51,85 +58,81 @@ function ReceivedInquiries() {
   if (error) {
     return (
       <div className="received-inquiries-page">
-        <h1>Received Inquiries</h1>
-
-        <p className="received-inquiries-error">
-          {error}
-        </p>
+        <div className="received-inquiries-header">
+          <h1>Received Inquiries</h1>
+          <p>View inquiries received for your properties.</p>
+        </div>
+        <div className="received-inquiries-error-state">
+          <h3>Unable to load inquiries</h3>
+          <p>{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="received-inquiries-page">
-
       <div className="received-inquiries-header">
-        <div>
-          <h1>Received Inquiries</h1>
-
-          <p>
-            View inquiries received for your properties.
-          </p>
-        </div>
+        <h1>Received Inquiries</h1>
+        <p>View inquiries received for your properties.</p>
       </div>
 
       {inquiries.length === 0 ? (
-        <div className="empty-received-inquiries">
-
-          <h2>No inquiries yet</h2>
-
-          <p>
-            You haven't received any inquiries
-            for your properties.
-          </p>
-
+        <div className="received-inquiries-empty">
+          <h3>No inquiries yet</h3>
+          <p>You haven't received any inquiries for your properties.</p>
         </div>
       ) : (
         <div className="received-inquiries-list">
-
           {inquiries.map((inquiry) => (
             <div
               className="received-inquiry-card"
               key={inquiry.id}
             >
-
               <div className="received-inquiry-header">
+                <h3>
+                  {inquiry.property_details?.title ||
+                    `Property #${inquiry.property}`}
+                </h3>
 
-                <h2>
-                  Property #{inquiry.property}
-                </h2>
-
-                <span>
+                <span className="received-inquiry-date">
                   {new Date(
                     inquiry.created_at
-                  ).toLocaleDateString()}
+                  ).toLocaleDateString("en-IN", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
                 </span>
-
               </div>
 
-              <p>
-                <strong>From:</strong>{" "}
-                Buyer #{inquiry.buyer}
-              </p>
+              <div className="received-inquiry-buyer">
+                <span className="received-inquiry-buyer-label">From</span>
+                <span className="received-inquiry-buyer-name">
+                  {inquiry.buyer_username ||
+                    `User #${inquiry.buyer}`}
+                </span>
+              </div>
 
-              <div className="buyer-message">
-
-                <strong>
+              <div className="received-inquiry-message">
+                <span className="received-inquiry-message-label">
                   Buyer's Message
-                </strong>
-
-                <p>
-                  {inquiry.message}
-                </p>
-
+                </span>
+                <p>{inquiry.message}</p>
               </div>
 
+              {inquiry.property_details && (
+                <Link
+                  to={`/properties/${inquiry.property_details.id}`}
+                  className="received-inquiry-property-link"
+                >
+                  View Property →
+                </Link>
+              )}
             </div>
           ))}
-
         </div>
       )}
-
     </div>
   );
 }

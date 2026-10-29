@@ -27,18 +27,13 @@ function Inquiries() {
           : response.data.results || [];
 
         setInquiries(data);
-
-      } catch (error) {
-        console.error(
-          "Inquiries error:",
-          error
-        );
+      } catch (err) {
+        console.error("Inquiries error:", err);
 
         setError(
-          error.response?.data?.detail ||
-          "Unable to load inquiries."
+          err.response?.data?.detail ||
+            "Unable to load inquiries."
         );
-
       } finally {
         setLoading(false);
       }
@@ -60,8 +55,21 @@ function Inquiries() {
   if (loading) {
     return (
       <div className="inquiries-page">
-        <h1>{pageTitle}</h1>
-        <p>Loading inquiries...</p>
+        <div className="inquiries-header">
+          <div>
+            <h1>{pageTitle}</h1>
+            <p>{pageDescription}</p>
+          </div>
+        </div>
+        <div className="inquiries-skeleton-list">
+          {[1, 2, 3].map((i) => (
+            <div className="inquiries-skeleton-card" key={i}>
+              <div className="skeleton-line skeleton-line-medium"></div>
+              <div className="skeleton-line skeleton-line-long"></div>
+              <div className="skeleton-line skeleton-line-short"></div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -69,115 +77,107 @@ function Inquiries() {
   if (error) {
     return (
       <div className="inquiries-page">
-        <h1>{pageTitle}</h1>
-
-        <p className="inquiries-error">
-          {error}
-        </p>
+        <div className="inquiries-header">
+          <div>
+            <h1>{pageTitle}</h1>
+            <p>{pageDescription}</p>
+          </div>
+        </div>
+        <div className="inquiries-error-state">
+          <h3>Unable to load inquiries</h3>
+          <p>{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="inquiries-page">
-
       <div className="inquiries-header">
-
         <div>
           <h1>{pageTitle}</h1>
-
-          <p>
-            {pageDescription}
-          </p>
+          <p>{pageDescription}</p>
         </div>
 
         {!isAgent && (
           <Link
             to="/properties"
-            className="browse-properties-button"
+            className="inquiries-browse-button"
           >
             Browse Properties
           </Link>
         )}
-
       </div>
 
       {inquiries.length === 0 ? (
-        <div className="empty-inquiries">
-
-          <h2>
-            {isAgent
-              ? "No inquiries received"
-              : "No inquiries yet"}
-          </h2>
-
+        <div className="inquiries-empty">
+          <h3>
+            {isAgent ? "No inquiries received" : "No inquiries yet"}
+          </h3>
           <p>
             {isAgent
               ? "No one has sent an inquiry about your properties yet."
               : "You haven't sent any property inquiries yet."}
           </p>
-
           {!isAgent && (
-            <Link to="/properties">
+            <Link to="/properties" className="inquiries-empty-button">
               Browse Properties
             </Link>
           )}
-
         </div>
       ) : (
         <div className="inquiries-list">
-
           {inquiries.map((inquiry) => (
             <div
               className="inquiry-card"
               key={inquiry.id}
             >
-
               <div className="inquiry-card-header">
-
-                <h2>
+                <h3>
                   {inquiry.property_details?.title ||
-                  `Property #${inquiry.property}`}
-                </h2>
+                    `Property #${inquiry.property}`}
+                </h3>
 
                 <span className="inquiry-date">
                   {new Date(
                     inquiry.created_at
-                  ).toLocaleDateString()}
+                  ).toLocaleDateString("en-IN", {
+                    year: "numeric",
+                    month: "short",
+                    day: "numeric",
+                  })}
                 </span>
-
               </div>
 
               {isAgent && (
                 <div className="inquiry-buyer">
-                  <strong>
-                    From:
-                  </strong>{" "}
-                  {inquiry.buyer_username ||
-                    `User #${inquiry.buyer}`}
+                  <span className="inquiry-buyer-label">From</span>
+                  <span className="inquiry-buyer-name">
+                    {inquiry.buyer_username ||
+                      `User #${inquiry.buyer}`}
+                  </span>
                 </div>
               )}
 
               <div className="inquiry-message">
-
-                <strong>
-                  {isAgent
-                    ? "Buyer's Message"
-                    : "Your Message"}
-                </strong>
-
-                <p>
-                  {inquiry.message}
-                </p>
-
+                <span className="inquiry-message-label">
+                  {isAgent ? "Buyer's Message" : "Your Message"}
+                </span>
+                <p>{inquiry.message}</p>
               </div>
 
+              {inquiry.property_details && (
+                <Link
+                  to={`/properties/${inquiry.property_details.id}`}
+                  className="inquiry-property-link"
+                >
+                  View Property →
+                </Link>
+              )}
             </div>
           ))}
-
         </div>
       )}
-
     </div>
   );
 }
