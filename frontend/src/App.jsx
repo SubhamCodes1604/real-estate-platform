@@ -7,6 +7,7 @@ import {
 import { AuthProvider } from "./context/AuthContext";
 
 import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 import Home from "./pages/Home";
@@ -160,6 +161,8 @@ function App() {
           </Routes>
 
         </main>
+
+        <Footer />
 
       </AuthProvider>
     </BrowserRouter>

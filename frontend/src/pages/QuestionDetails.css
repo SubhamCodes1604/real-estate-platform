@@ -71,6 +71,10 @@
   margin: 0;
 }
 
+.ai-answer-actions {
+  margin-top: 16px;
+}
+
 /* ========================= */
 /* SHARED TEXT STATES */
 /* ========================= */

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
+import PropertyCard from "../components/PropertyCard";
 import "./Bookmarks.css";
 
 function Bookmarks() {
@@ -20,18 +21,13 @@ function Bookmarks() {
           : response.data.results || [];
 
         setBookmarks(data);
-
-      } catch (error) {
-        console.error(
-          "Bookmarks error:",
-          error
-        );
+      } catch (err) {
+        console.error("Bookmarks error:", err);
 
         setError(
-          error.response?.data?.detail ||
-          "Unable to load bookmarks."
+          err.response?.data?.detail ||
+            "Unable to load bookmarks."
         );
-
       } finally {
         setLoading(false);
       }
@@ -48,20 +44,15 @@ function Bookmarks() {
 
       setBookmarks((currentBookmarks) =>
         currentBookmarks.filter(
-          (bookmark) =>
-            bookmark.id !== bookmarkId
+          (bookmark) => bookmark.id !== bookmarkId
         )
       );
-
-    } catch (error) {
-      console.error(
-        "Remove bookmark error:",
-        error
-      );
+    } catch (err) {
+      console.error("Remove bookmark error:", err);
 
       setError(
-        error.response?.data?.detail ||
-        "Unable to remove bookmark."
+        err.response?.data?.detail ||
+          "Unable to remove bookmark."
       );
     }
   };
@@ -69,8 +60,22 @@ function Bookmarks() {
   if (loading) {
     return (
       <div className="bookmarks-page">
-        <h1>My Bookmarks</h1>
-        <p>Loading bookmarks...</p>
+        <div className="bookmarks-header">
+          <h1>My Bookmarks</h1>
+          <p>Properties you've saved for later.</p>
+        </div>
+        <div className="bookmarks-skeleton-grid">
+          {[1, 2, 3].map((i) => (
+            <div className="bookmarks-skeleton-card" key={i}>
+              <div className="skeleton-image"></div>
+              <div className="skeleton-body">
+                <div className="skeleton-line skeleton-line-medium"></div>
+                <div className="skeleton-line skeleton-line-short"></div>
+                <div className="skeleton-line skeleton-line-long"></div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -78,95 +83,56 @@ function Bookmarks() {
   if (error) {
     return (
       <div className="bookmarks-page">
-        <h1>My Bookmarks</h1>
-
-        <p className="bookmarks-error">
-          {error}
-        </p>
+        <div className="bookmarks-header">
+          <h1>My Bookmarks</h1>
+          <p>Properties you've saved for later.</p>
+        </div>
+        <div className="bookmarks-error-state">
+          <h3>Unable to load bookmarks</h3>
+          <p>{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="bookmarks-page">
-
-      <h1>My Bookmarks</h1>
+      <div className="bookmarks-header">
+        <h1>My Bookmarks</h1>
+        <p>Properties you've saved for later.</p>
+      </div>
 
       {bookmarks.length === 0 ? (
-        <div className="empty-bookmarks">
-          <p>
-            You haven't bookmarked any properties yet.
-          </p>
-
-          <Link to="/properties">
+        <div className="bookmarks-empty">
+          <h3>No bookmarks yet</h3>
+          <p>You haven't bookmarked any properties yet.</p>
+          <Link to="/properties" className="bookmarks-empty-button">
             Browse Properties
           </Link>
         </div>
       ) : (
         <div className="bookmarks-grid">
-
           {bookmarks.map((bookmark) => {
             const property = bookmark.property;
+            if (!property) return null;
 
             return (
               <div
-                className="bookmark-card"
+                className="bookmark-wrapper"
                 key={bookmark.id}
               >
-
-                {property?.image && (
-                  <img
-                    src={property.image}
-                    alt={property.title}
-                    className="bookmark-image"
-                  />
-                )}
-
-                <div className="bookmark-content">
-
-                  <h2>
-                    {property?.title ||
-                      "Property"}
-                  </h2>
-
-                  <p className="bookmark-price">
-                    ₹ {property?.price}
-                  </p>
-
-                  <p>
-                    {property?.city},{" "}
-                    {property?.state}
-                  </p>
-
-                  <div className="bookmark-actions">
-
-                    <Link
-                      to={`/properties/${property?.id}`}
-                      className="view-property-button"
-                    >
-                      View Property
-                    </Link>
-
-                    <button
-                      className="remove-bookmark-button"
-                      onClick={() =>
-                        removeBookmark(bookmark.id)
-                      }
-                    >
-                      Remove
-                    </button>
-
-                  </div>
-
-                </div>
-
+                <PropertyCard property={property} />
+                <button
+                  className="bookmark-remove-button"
+                  onClick={() => removeBookmark(bookmark.id)}
+                >
+                  Remove Bookmark
+                </button>
               </div>
             );
           })}
-
         </div>
       )}
-
     </div>
   );
 }

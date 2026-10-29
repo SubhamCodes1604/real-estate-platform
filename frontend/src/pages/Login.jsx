@@ -22,10 +22,10 @@ function Login() {
       await login(username, password);
 
       navigate("/");
-    } catch (error) {
+    } catch (err) {
       setError(
-        error.response?.data?.detail ||
-        "Invalid username or password."
+        err.response?.data?.detail ||
+          "Invalid username or password."
       );
     } finally {
       setLoading(false);
@@ -36,36 +36,37 @@ function Login() {
     <div className="auth-container">
       <div className="auth-card">
         <h1>Login</h1>
-
         <p>Login to your RealEstate AI account.</p>
 
         {error && (
-          <div className="error-message">
+          <div className="error-message" role="alert">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <div className="form-group">
-            <label>Username</label>
-
+            <label htmlFor="login-username">Username</label>
             <input
               type="text"
+              id="login-username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
+              autoComplete="username"
               required
             />
           </div>
 
           <div className="form-group">
-            <label>Password</label>
-
+            <label htmlFor="login-password">Password</label>
             <input
               type="password"
+              id="login-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
+              autoComplete="current-password"
               required
             />
           </div>
@@ -77,9 +78,7 @@ function Login() {
 
         <p className="auth-link">
           Don't have an account?{" "}
-          <Link to="/register">
-            Register
-          </Link>
+          <Link to="/register">Register</Link>
         </p>
       </div>
     </div>

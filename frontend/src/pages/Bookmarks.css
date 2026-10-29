@@ -1,85 +1,162 @@
 .bookmarks-page {
-  max-width: 1100px;
+  max-width: var(--max-width);
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: var(--space-10) var(--space-6);
 }
 
-.bookmarks-page h1 {
-  margin-bottom: 30px;
+/* ========================= */
+/* HEADER */
+/* ========================= */
+
+.bookmarks-header {
+  margin-bottom: var(--space-8);
 }
+
+.bookmarks-header h1 {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-2);
+}
+
+.bookmarks-header p {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+}
+
+/* ========================= */
+/* GRID */
+/* ========================= */
 
 .bookmarks-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 25px;
+  gap: var(--space-6);
 }
 
-.bookmark-card {
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+.bookmark-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.bookmark-remove-button {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  background: var(--color-surface);
+  color: var(--color-error);
+  transition: all var(--transition-base);
+}
+
+.bookmark-remove-button:hover {
+  background: var(--color-error);
+  color: var(--color-surface);
+  border-color: var(--color-error);
+}
+
+/* ========================= */
+/* EMPTY STATE */
+/* ========================= */
+
+.bookmarks-empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.bookmarks-empty h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-2);
+}
+
+.bookmarks-empty p {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-5);
+}
+
+.bookmarks-empty-button {
+  display: inline-block;
+  padding: var(--space-3) var(--space-6);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  background: var(--color-primary);
+  color: var(--color-surface);
+  transition: background var(--transition-base);
+}
+
+.bookmarks-empty-button:hover {
+  background: var(--color-primary-hover);
+}
+
+/* ========================= */
+/* ERROR STATE */
+/* ========================= */
+
+.bookmarks-error-state {
+  text-align: center;
+  padding: var(--space-12) var(--space-6);
+  background: var(--color-error-light);
+  border: 1px solid var(--color-error-border);
+  border-radius: var(--radius-lg);
+}
+
+.bookmarks-error-state h3 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-2);
+}
+
+.bookmarks-error-state p {
+  font-size: var(--text-sm);
+  color: var(--color-error);
+}
+
+/* ========================= */
+/* SKELETONS */
+/* ========================= */
+
+.bookmarks-skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+}
+
+.bookmarks-skeleton-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
   overflow: hidden;
 }
 
-.bookmark-image {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
+/* ========================= */
+/* RESPONSIVE */
+/* ========================= */
+
+@media (max-width: 1024px) {
+  .bookmarks-grid,
+  .bookmarks-skeleton-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.bookmark-content {
-  padding: 20px;
-}
+@media (max-width: 768px) {
+  .bookmarks-page {
+    padding: var(--space-6) var(--space-4);
+  }
 
-.bookmark-content h2 {
-  margin-top: 0;
-  margin-bottom: 10px;
-}
-
-.bookmark-price {
-  font-size: 20px;
-  font-weight: bold;
-}
-
-.bookmark-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.view-property-button,
-.remove-bookmark-button {
-  padding: 10px 15px;
-  border-radius: 6px;
-  text-decoration: none;
-  cursor: pointer;
-  font-size: 14px;
-}
-
-.view-property-button {
-  border: 1px solid #222;
-  color: #222;
-  background: white;
-}
-
-.remove-bookmark-button {
-  border: 1px solid #d33;
-  color: #d33;
-  background: white;
-}
-
-.empty-bookmarks {
-  padding: 30px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  background: white;
-}
-
-.empty-bookmarks a {
-  display: inline-block;
-  margin-top: 15px;
-}
-
-.bookmarks-error {
-  color: #d33;
+  .bookmarks-grid,
+  .bookmarks-skeleton-grid {
+    grid-template-columns: 1fr;
+  }
 }

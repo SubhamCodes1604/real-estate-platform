@@ -2,24 +2,18 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import PropertyCard from "../components/PropertyCard";
 import "./Dashboard.css";
+
+const formatPrice = (price) => {
+  const num = Number(price);
+  if (num >= 10000000) return `₹ ${(num / 10000000).toFixed(2)} Cr`;
+  if (num >= 100000) return `₹ ${(num / 100000).toFixed(2)} L`;
+  return `₹ ${num.toLocaleString("en-IN")}`;
+};
 
 function Dashboard() {
   const { user } = useAuth();
-
-  const [stats, setStats] = useState(null);
-  const [statsLoading, setStatsLoading] = useState(true);
-  const [statsError, setStatsError] = useState("");
-
-  // =========================
-  // PERSONALIZED ML
-  // =========================
-
-  const [recommendations, setRecommendations] = useState([]);
-  const [recommendationsLoading, setRecommendationsLoading] =
-    useState(true);
-  const [recommendationsError, setRecommendationsError] =
-    useState("");
 
   const userRole = user?.role;
 
@@ -27,20 +21,26 @@ function Dashboard() {
   const isAdmin = userRole === "ADMIN";
   const isAgent = userRole === "AGENT";
 
+  const [stats, setStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(isAdmin);
+  const [statsError, setStatsError] = useState("");
 
-  // =========================
-  // ADMIN DASHBOARD STATS
-  // =========================
+  const [pendingProperties, setPendingProperties] = useState([]);
+  const [pendingLoading, setPendingLoading] = useState(isAdmin);
+  const [pendingError, setPendingError] = useState("");
+  const [actionLoadingId, setActionLoadingId] = useState(null);
+
+  const [recommendations, setRecommendations] = useState([]);
+  const [recommendationsLoading, setRecommendationsLoading] =
+    useState(isUser);
+  const [recommendationsError, setRecommendationsError] =
+    useState("");
 
   useEffect(() => {
-    if (!isAdmin) {
-      setStatsLoading(false);
-      return;
-    }
+    if (!isAdmin) return;
 
     const fetchDashboardStats = async () => {
       try {
-        setStatsLoading(true);
         setStatsError("");
 
         const response = await api.get(
@@ -48,7 +48,6 @@ function Dashboard() {
         );
 
         setStats(response.data);
-
       } catch (error) {
         console.error(
           "Dashboard error:",
@@ -59,61 +58,128 @@ function Dashboard() {
           error.response?.data?.detail ||
           "Unable to load dashboard statistics."
         );
-
       } finally {
         setStatsLoading(false);
       }
     };
 
+    const fetchPendingProperties = async () => {
+      try {
+        setPendingError("");
+
+        const response = await api.get(
+          "/properties/pending/"
+        );
+
+        const data = Array.isArray(response.data)
+          ? response.data
+          : response.data.results || [];
+
+        setPendingProperties(data);
+      } catch (error) {
+        console.error(
+          "Pending properties error:",
+          error
+        );
+
+        setPendingError(
+          error.response?.data?.detail ||
+          "Unable to load pending properties."
+        );
+      } finally {
+        setPendingLoading(false);
+      }
+    };
+
     fetchDashboardStats();
+    fetchPendingProperties();
   }, [isAdmin]);
 
+  const handleApproveProperty = async (propertyId) => {
+    setActionLoadingId(propertyId);
 
-  // =========================
-  // PERSONALIZED ML
-  // =========================
+    try {
+      await api.patch(
+        `/properties/approve/${propertyId}/`
+      );
+
+      setPendingProperties((current) =>
+        current.filter(
+          (prop) => prop.id !== propertyId
+        )
+      );
+
+      setStats((currentStats) => {
+        if (!currentStats) return currentStats;
+        return {
+          ...currentStats,
+          approved_properties:
+            currentStats.approved_properties + 1,
+        };
+      });
+    } catch (error) {
+      console.error(
+        "Approve property error:",
+        error
+      );
+
+      setPendingError(
+        error.response?.data?.error ||
+          error.response?.data?.detail ||
+          "Unable to approve property."
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleRejectProperty = async (propertyId) => {
+    setActionLoadingId(propertyId);
+
+    try {
+      await api.patch(
+        `/properties/reject/${propertyId}/`
+      );
+
+      setPendingProperties((current) =>
+        current.filter(
+          (prop) => prop.id !== propertyId
+        )
+      );
+    } catch (error) {
+      console.error(
+        "Reject property error:",
+        error
+      );
+
+      setPendingError(
+        error.response?.data?.error ||
+          error.response?.data?.detail ||
+          "Unable to reject property."
+      );
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
 
   useEffect(() => {
-    if (!isUser) {
-      setRecommendationsLoading(false);
-      return;
-    }
+    if (!isUser) return;
 
     const fetchPersonalizedRecommendations =
       async () => {
-
         try {
-          setRecommendationsLoading(true);
           setRecommendationsError("");
 
           const response = await api.get(
             "/properties/recommendations/ml/personalized/"
           );
 
-          console.log(
-            "Personalized recommendation response:",
-            response.data
-          );
-
-          /*
-            Backend response is expected to be:
-
-            {
-              "recommendations": [...]
-            }
-
-            If the backend directly returns an array,
-            that is also handled.
-          */
-
           const data = Array.isArray(response.data)
             ? response.data
             : response.data.recommendations || [];
 
           setRecommendations(data);
-
         } catch (error) {
-
           console.error(
             "Personalized recommendation error:",
             error
@@ -123,357 +189,369 @@ function Dashboard() {
             error.response?.data?.detail ||
             "Unable to load personalized recommendations."
           );
-
         } finally {
           setRecommendationsLoading(false);
         }
       };
 
     fetchPersonalizedRecommendations();
-
   }, [isUser]);
 
-
-  // =========================
-  // ADMIN VIEW
-  // =========================
-
   if (isAdmin) {
-
     if (statsLoading) {
       return (
         <div className="dashboard-page">
-
-          <h1>Dashboard</h1>
-
-          <p>
-            Loading dashboard...
-          </p>
-
+          <div className="dashboard-skeleton-header"></div>
+          <div className="dashboard-stats-grid">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div
+                className="dashboard-stat-skeleton"
+                key={i}
+              >
+                <div className="skeleton-line skeleton-line-short"></div>
+                <div className="skeleton-line skeleton-line-tall"></div>
+                <div className="skeleton-line skeleton-line-medium"></div>
+              </div>
+            ))}
+          </div>
         </div>
       );
     }
-
 
     if (statsError) {
       return (
         <div className="dashboard-page">
-
           <h1>Dashboard</h1>
-
-          <p>
-            {statsError}
-          </p>
-
+          <div className="dashboard-error-state">
+            <h3>Unable to load dashboard</h3>
+            <p>{statsError}</p>
+          </div>
         </div>
       );
     }
 
-
     return (
       <div className="dashboard-page">
-
-        <h1>
-          Dashboard
-        </h1>
-
-        <div className="dashboard-stats">
-
-          <div className="stat-card">
-            <h3>Total Properties</h3>
-            <p>{stats.total_properties}</p>
-          </div>
-
-          <div className="stat-card">
-            <h3>Approved Properties</h3>
-            <p>{stats.approved_properties}</p>
-          </div>
-
-          <div className="stat-card">
-            <h3>Featured Properties</h3>
-            <p>{stats.featured_properties}</p>
-          </div>
-
-          <div className="stat-card">
-            <h3>Total Users</h3>
-            <p>{stats.total_users}</p>
-          </div>
-
-          <div className="stat-card">
-            <h3>Total Reviews</h3>
-            <p>{stats.total_reviews}</p>
-          </div>
-
-          <div className="stat-card">
-            <h3>Total Bookmarks</h3>
-            <p>{stats.total_bookmarks}</p>
-          </div>
-
-          <div className="stat-card">
-            <h3>Total Inquiries</h3>
-            <p>{stats.total_inquiries}</p>
-          </div>
-
+        <div className="dashboard-header">
+          <h1>Admin Dashboard</h1>
+          <p>Platform overview and statistics.</p>
         </div>
 
+        <div className="dashboard-stats-grid">
+          <div className="dashboard-stat-card">
+            <span className="dashboard-stat-label">Total Properties</span>
+            <strong>{stats.total_properties}</strong>
+          </div>
+
+          <div className="dashboard-stat-card">
+            <span className="dashboard-stat-label">Approved Properties</span>
+            <strong>{stats.approved_properties}</strong>
+          </div>
+
+          <div className="dashboard-stat-card">
+            <span className="dashboard-stat-label">Featured Properties</span>
+            <strong>{stats.featured_properties}</strong>
+          </div>
+
+          <div className="dashboard-stat-card">
+            <span className="dashboard-stat-label">Total Users</span>
+            <strong>{stats.total_users}</strong>
+          </div>
+
+          <div className="dashboard-stat-card">
+            <span className="dashboard-stat-label">Total Reviews</span>
+            <strong>{stats.total_reviews}</strong>
+          </div>
+
+          <div className="dashboard-stat-card">
+            <span className="dashboard-stat-label">Total Bookmarks</span>
+            <strong>{stats.total_bookmarks}</strong>
+          </div>
+
+          <div className="dashboard-stat-card">
+            <span className="dashboard-stat-label">Total Inquiries</span>
+            <strong>{stats.total_inquiries}</strong>
+          </div>
+        </div>
+
+        {/* ========================= */}
+        {/* PENDING PROPERTIES */}
+        {/* ========================= */}
+
+        <section className="dashboard-pending-section">
+          <div className="dashboard-section-header">
+            <div>
+              <h2>Properties Awaiting Approval</h2>
+              <p>
+                Review and approve or reject newly
+                listed properties.
+              </p>
+            </div>
+          </div>
+
+          {pendingLoading && (
+            <div className="dashboard-loading">
+              <div className="dashboard-card-skeleton-grid">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    className="dashboard-card-skeleton"
+                    key={i}
+                  >
+                    <div className="skeleton-image"></div>
+                    <div className="skeleton-body">
+                      <div className="skeleton-line skeleton-line-medium"></div>
+                      <div className="skeleton-line skeleton-line-short"></div>
+                      <div className="skeleton-line skeleton-line-long"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {pendingError && (
+            <div className="dashboard-error-state">
+              <h3>Unable to load pending properties</h3>
+              <p>{pendingError}</p>
+            </div>
+          )}
+
+          {!pendingLoading &&
+            !pendingError &&
+            pendingProperties.length === 0 && (
+              <div className="dashboard-empty-state">
+                <h3>No pending properties</h3>
+                <p>
+                  All properties have been reviewed.
+                </p>
+              </div>
+            )}
+
+          {!pendingLoading &&
+            !pendingError &&
+            pendingProperties.length > 0 && (
+              <div className="dashboard-pending-list">
+                {pendingProperties.map((prop) => (
+                  <div
+                    className="dashboard-pending-card"
+                    key={prop.id}
+                  >
+                    <div className="dashboard-pending-image-wrap">
+                      {prop.image ? (
+                        <img
+                          src={prop.image}
+                          alt={prop.title}
+                          className="dashboard-pending-image"
+                        />
+                      ) : (
+                        <div className="dashboard-pending-no-image">
+                          No Image
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="dashboard-pending-content">
+                      <div className="dashboard-pending-top">
+                        <h3>{prop.title}</h3>
+                        <span className="dashboard-pending-status pending">
+                          Pending
+                        </span>
+                      </div>
+
+                      <p className="dashboard-pending-price">
+                        {formatPrice(prop.price)}
+                      </p>
+
+                      <p className="dashboard-pending-location">
+                        {prop.city}, {prop.state}
+                      </p>
+
+                      <div className="dashboard-pending-features">
+                        <span><strong>{prop.bedrooms}</strong> Beds</span>
+                        <span><strong>{prop.bathrooms}</strong> Baths</span>
+                        <span><strong>{Number(prop.area_sqft).toLocaleString()}</strong> sq.ft</span>
+                      </div>
+
+                      <div className="dashboard-pending-actions">
+                        <Link
+                          to={`/properties/${prop.id}`}
+                          className="dashboard-pending-view"
+                        >
+                          View Details
+                        </Link>
+                        <button
+                          type="button"
+                          className="dashboard-pending-approve"
+                          onClick={() =>
+                            handleApproveProperty(prop.id)
+                          }
+                          disabled={actionLoadingId === prop.id}
+                        >
+                          {actionLoadingId === prop.id
+                            ? "Processing..."
+                            : "Approve"}
+                        </button>
+                        <button
+                          type="button"
+                          className="dashboard-pending-reject"
+                          onClick={() =>
+                            handleRejectProperty(prop.id)
+                          }
+                          disabled={actionLoadingId === prop.id}
+                        >
+                          {actionLoadingId === prop.id
+                            ? "Processing..."
+                            : "Reject"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+        </section>
       </div>
     );
   }
 
-
-  // =========================
-  // AGENT VIEW
-  // =========================
-
   if (isAgent) {
-
     return (
       <div className="dashboard-page">
-
-        <h1>
-          Agent Dashboard
-        </h1>
-
-        <p>
-          Manage your properties and received
-          inquiries from your agent dashboard.
-        </p>
+        <div className="dashboard-header">
+          <h1>Agent Dashboard</h1>
+          <p>
+            Manage your properties and received
+            inquiries from your agent dashboard.
+          </p>
+        </div>
 
         <div className="dashboard-actions">
-
           <Link
             to="/my-properties"
             className="dashboard-action-button"
           >
             My Properties
           </Link>
-
           <Link
             to="/received-inquiries"
-            className="dashboard-action-button"
+            className="dashboard-action-button dashboard-action-button-secondary"
           >
             Received Inquiries
           </Link>
-
         </div>
-
       </div>
     );
   }
 
-
-  // =========================
-  // USER DASHBOARD
-  // =========================
-
   return (
     <div className="dashboard-page">
-
-      <div className="user-dashboard-header">
-
-        <h1>
-          Welcome, {user?.username}
-        </h1>
-
+      <div className="dashboard-header">
+        <h1>Welcome, {user?.username}</h1>
         <p>
           Discover properties recommended for you
           based on your interests.
         </p>
-
       </div>
 
-
-      {/* ========================= */}
-      {/* PERSONALIZED RECOMMENDATIONS */}
-      {/* ========================= */}
-
-      <section className="personalized-recommendations">
-
-        <div className="recommendations-header">
-
-          <h2>
-            Recommended For You
-          </h2>
-
-          <p>
-            Personalized property recommendations
-            based on your saved properties.
-          </p>
-
+      <section className="dashboard-recommendations">
+        <div className="dashboard-section-header">
+          <div>
+            <h2>Recommended For You</h2>
+            <p>
+              Personalized property recommendations
+              based on your saved properties.
+            </p>
+          </div>
         </div>
 
-
-        {/* LOADING */}
-
         {recommendationsLoading && (
-
-          <p className="recommendations-loading">
-            Finding properties for you...
-          </p>
-
+          <div className="dashboard-loading">
+            <div className="dashboard-card-skeleton-grid">
+              {[1, 2, 3].map((i) => (
+                <div
+                  className="dashboard-card-skeleton"
+                  key={i}
+                >
+                  <div className="skeleton-image"></div>
+                  <div className="skeleton-body">
+                    <div className="skeleton-line skeleton-line-medium"></div>
+                    <div className="skeleton-line skeleton-line-short"></div>
+                    <div className="skeleton-line skeleton-line-long"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
-
-
-        {/* ERROR */}
 
         {recommendationsError && (
-
-          <p className="recommendation-error">
-            {recommendationsError}
-          </p>
-
+          <div className="dashboard-error-state">
+            <h3>Recommendations unavailable</h3>
+            <p>{recommendationsError}</p>
+          </div>
         )}
-
-
-        {/* NO RECOMMENDATIONS */}
 
         {!recommendationsLoading &&
           !recommendationsError &&
           recommendations.length === 0 && (
-
-            <div className="no-recommendations">
-
-              <h3>
-                No personalized recommendations yet
-              </h3>
-
+            <div className="dashboard-empty-state">
+              <h3>No personalized recommendations yet</h3>
               <p>
                 Bookmark some properties to help us
                 understand your preferences and generate
                 personalized recommendations.
               </p>
-
               <Link
                 to="/properties"
-                className="browse-properties-button"
+                className="dashboard-primary-button"
               >
                 Browse Properties
               </Link>
-
             </div>
-
-        )}
-
-
-        {/* RECOMMENDATION CARDS */}
+          )}
 
         {!recommendationsLoading &&
           !recommendationsError &&
           recommendations.length > 0 && (
+            <div className="dashboard-recommendations-grid">
+              {recommendations.map((rec) => {
+                const propertyData = rec.id
+                  ? {
+                      id: rec.id,
+                      title: rec.title,
+                      price: rec.price,
+                      city: rec.city,
+                      state: rec.state,
+                      property_type: rec.property_type,
+                      bedrooms: rec.bedrooms,
+                      bathrooms: rec.bathrooms,
+                      area_sqft: rec.area_sqft,
+                      image: rec.image,
+                      is_featured: rec.is_featured,
+                    }
+                  : null;
 
-            <div className="personalized-grid">
-
-              {recommendations.map(
-                (recommendedProperty) => (
-
+                return propertyData ? (
                   <div
-                    className="personalized-card"
-                    key={recommendedProperty.id}
+                    key={rec.id}
+                    className="dashboard-recommendation-wrapper"
                   >
-
-                    {/* IMAGE */}
-
-                    {recommendedProperty.image ? (
-
-                      <img
-                        src={recommendedProperty.image}
-                        alt={recommendedProperty.title}
-                        className="personalized-image"
-                      />
-
-                    ) : (
-
-                      <div className="personalized-no-image">
-                        No Image
+                    {rec.similarity_score !== undefined && (
+                      <div className="dashboard-match-score">
+                        Match:{" "}
+                        {(
+                          rec.similarity_score * 100
+                        ).toFixed(1)}
+                        %
                       </div>
-
                     )}
-
-
-                    {/* CONTENT */}
-
-                    <div className="personalized-content">
-
-                      <h3>
-                        {recommendedProperty.title}
-                      </h3>
-
-
-                      <p className="personalized-price">
-                        ₹ {recommendedProperty.price}
-                      </p>
-
-
-                      <p className="personalized-location">
-                        {recommendedProperty.city},{" "}
-                        {recommendedProperty.state}
-                      </p>
-
-
-                      {/* FEATURES */}
-
-                      <div className="personalized-features">
-
-                        <span>
-                          {recommendedProperty.bedrooms}
-                          {" "}Bedrooms
-                        </span>
-
-                        <span>
-                          {recommendedProperty.bathrooms}
-                          {" "}Bathrooms
-                        </span>
-
-                        <span>
-                          {recommendedProperty.area_sqft}
-                          {" "}sq.ft
-                        </span>
-
-                      </div>
-
-
-                      {/* SIMILARITY SCORE */}
-
-                      {recommendedProperty.similarity_score !==
-                        undefined && (
-
-                        <p className="personalized-score">
-
-                          Match:
-                          {" "}
-                          {(
-                            recommendedProperty.similarity_score *
-                            100
-                          ).toFixed(1)}
-                          %
-
-                        </p>
-
-                      )}
-
-
-                      {/* VIEW PROPERTY */}
-
-                      <Link
-                        to={`/properties/${recommendedProperty.id}`}
-                        className="view-personalized-button"
-                      >
-                        View Property
-                      </Link>
-
-                    </div>
-
+                    <PropertyCard property={propertyData} />
                   </div>
-
-                )
-              )}
-
+                ) : null;
+              })}
             </div>
-
-        )}
-
+          )}
       </section>
-
     </div>
   );
 }

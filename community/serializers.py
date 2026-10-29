@@ -10,6 +10,11 @@ class AnswerSerializer(serializers.ModelSerializer):
         read_only=True,
         default=None,
     )
+    author_role = serializers.CharField(
+        source="author.role",
+        read_only=True,
+        default=None,
+    )
     likes = serializers.SerializerMethodField()
     dislikes = serializers.SerializerMethodField()
     user_vote = serializers.SerializerMethodField()
@@ -21,6 +26,7 @@ class AnswerSerializer(serializers.ModelSerializer):
             "question",
             "author",
             "author_username",
+            "author_role",
             "body",
             "is_ai_generated",
             "is_accepted",
@@ -34,6 +40,7 @@ class AnswerSerializer(serializers.ModelSerializer):
             "question",
             "author",
             "author_username",
+            "author_role",
             "is_ai_generated",
             "is_accepted",
             "created_at",
@@ -70,7 +77,9 @@ class QuestionSerializer(serializers.ModelSerializer):
         source="author.username",
         read_only=True,
     )
-    answers = AnswerSerializer(many=True, read_only=True)
+    answers = serializers.SerializerMethodField()
+    answers_count = serializers.SerializerMethodField()
+    has_accepted_answer = serializers.SerializerMethodField()
 
     class Meta:
         model = Question
@@ -81,6 +90,8 @@ class QuestionSerializer(serializers.ModelSerializer):
             "author",
             "author_username",
             "answers",
+            "answers_count",
+            "has_accepted_answer",
             "created_at",
             "updated_at",
         ]
@@ -89,6 +100,37 @@ class QuestionSerializer(serializers.ModelSerializer):
             "author",
             "author_username",
             "answers",
+            "answers_count",
+            "has_accepted_answer",
             "created_at",
             "updated_at",
         ]
+
+    def get_answers(self, obj):
+        if hasattr(obj, "community_answers"):
+            community_answers = obj.community_answers
+        else:
+            community_answers = obj.answers.filter(
+                is_ai_generated=False
+            )
+
+        return AnswerSerializer(
+            community_answers,
+            many=True,
+            context=self.context,
+        ).data
+
+    def get_answers_count(self, obj):
+        if hasattr(obj, "answers_count"):
+            return obj.answers_count
+        return obj.answers.filter(
+            is_ai_generated=False
+        ).count()
+
+    def get_has_accepted_answer(self, obj):
+        if hasattr(obj, "has_accepted_answer"):
+            return obj.has_accepted_answer
+        return obj.answers.filter(
+            is_ai_generated=False,
+            is_accepted=True,
+        ).exists()

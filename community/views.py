@@ -28,6 +28,19 @@ class QuestionListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         queryset = (
             Question.objects.select_related("author")
+            .annotate(
+                answers_count=Count(
+                    "answers",
+                    filter=Q(answers__is_ai_generated=False),
+                ),
+                has_accepted_answer=Count(
+                    "answers",
+                    filter=Q(
+                        answers__is_ai_generated=False,
+                        answers__is_accepted=True,
+                    ),
+                ),
+            )
             .prefetch_related("answers__author", "answers__votes")
         )
 
@@ -52,13 +65,25 @@ class QuestionListCreateView(generics.ListCreateAPIView):
 class QuestionDetailView(generics.RetrieveAPIView):
     queryset = (
         Question.objects.select_related("author")
+        .annotate(
+            answers_count=Count(
+                "answers",
+                filter=Q(answers__is_ai_generated=False),
+            ),
+            has_accepted_answer=Count(
+                "answers",
+                filter=Q(
+                    answers__is_ai_generated=False,
+                    answers__is_accepted=True,
+                ),
+            ),
+        )
         .prefetch_related(
-            "answers__author",
             Prefetch(
                 "answers",
                 queryset=Answer.objects.filter(
                     is_ai_generated=False
-                ).select_related("author"),
+                ).select_related("author").prefetch_related("votes"),
                 to_attr="community_answers",
             ),
         )
@@ -137,12 +162,29 @@ class AIAnswerView(APIView):
                 status=status.HTTP_503_SERVICE_UNAVAILABLE,
             )
 
+        likes = answer.votes.filter(
+            vote=AnswerVote.LIKE
+        ).count()
+        dislikes = answer.votes.filter(
+            vote=AnswerVote.DISLIKE
+        ).count()
+
+        user_vote = None
+        if request.user.is_authenticated:
+            user_vote = AnswerVote.objects.filter(
+                answer=answer,
+                user=request.user,
+            ).values_list("vote", flat=True).first()
+
         return Response({
             "id": answer.id,
             "question": answer.question_id,
             "answer": answer.body,
             "is_ai_generated": answer.is_ai_generated,
             "created_at": answer.created_at,
+            "likes": likes,
+            "dislikes": dislikes,
+            "user_vote": user_vote,
         })
 
 

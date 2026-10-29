@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 .env
 .env.*
 !.env.example
@@ -5,6 +6,10 @@
 __pycache__/
 *.py[cod]
 venv/
+<<<<<<< HEAD
+=======
+=======
+>>>>>>> feature/phase-1-ui-enhancements
 node_modules/
 .env
 vite.config.js.timestamp-*.mjs
@@ -19,3 +24,7 @@ vitest.config.cjs.timestamp-*.mjs
 vitest.config.ts.timestamp-*.mjs
 vitest.config.mts.timestamp-*.mjs
 vitest.config.cts.timestamp-*.mjs
+<<<<<<< HEAD
+=======
+>>>>>>> 7b3c5d1 (Added .gitignore)
+>>>>>>> feature/phase-1-ui-enhancements

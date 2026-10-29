@@ -14,6 +14,7 @@ function PropertyDetails() {
   const [error, setError] = useState("");
 
   const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [inquiryMessage, setInquiryMessage] = useState("");
 
@@ -37,7 +38,7 @@ function PropertyDetails() {
 
 
   // =========================
-  // FETCH PROPERTY
+  // FETCH PROPERTY + BOOKMARK STATUS
   // =========================
 
   useEffect(() => {
@@ -52,14 +53,14 @@ function PropertyDetails() {
 
         setProperty(response.data);
 
-      } catch (error) {
+      } catch (err) {
         console.error(
           "Property details error:",
-          error
+          err
         );
 
         setError(
-          error.response?.data?.detail ||
+          err.response?.data?.detail ||
           "Unable to load property."
         );
 
@@ -68,8 +69,29 @@ function PropertyDetails() {
       }
     };
 
+    const fetchBookmarkStatus = async () => {
+      if (!isAuthenticated || !isUser) {
+        setBookmarked(false);
+        return;
+      }
+
+      try {
+        const response = await api.get(
+          `/bookmarks/status/${id}/`
+        );
+
+        setBookmarked(response.data.is_bookmarked);
+      } catch (err) {
+        console.error(
+          "Bookmark status error:",
+          err
+        );
+      }
+    };
+
     fetchProperty();
-  }, [id]);
+    fetchBookmarkStatus();
+  }, [id, isAuthenticated, isUser]);
 
 
   // =========================
@@ -175,12 +197,32 @@ function PropertyDetails() {
   // =========================
 
   const handleBookmark = async () => {
+    setBookmarkLoading(true);
+
     try {
 
       if (bookmarked) {
 
+        const listResponse = await api.get(
+          "/bookmarks/list/"
+        );
+
+        const allBookmarks = Array.isArray(listResponse.data)
+          ? listResponse.data
+          : listResponse.data.results || [];
+
+        const bookmark = allBookmarks.find(
+          (b) => b.property?.id === property.id
+        );
+
+        if (!bookmark) {
+          setBookmarked(false);
+          setMessage("This property is not in your bookmarks.");
+          return;
+        }
+
         await api.delete(
-          `/bookmarks/delete/${property.id}/`
+          `/bookmarks/remove/${bookmark.id}/`
         );
 
         setBookmarked(false);
@@ -192,9 +234,9 @@ function PropertyDetails() {
       } else {
 
         await api.post(
-          "/bookmarks/create/",
+          "/bookmarks/add/",
           {
-            property: property.id,
+            property_id: property.id,
           }
         );
 
@@ -205,17 +247,26 @@ function PropertyDetails() {
         );
       }
 
-    } catch (error) {
+    } catch (err) {
 
       console.error(
         "Bookmark error:",
-        error
+        err
       );
 
-      setMessage(
-        error.response?.data?.detail ||
-        "Unable to update bookmark."
-      );
+      const errorData = err.response?.data;
+
+      let errorMsg = "Unable to update bookmark.";
+
+      if (typeof errorData === "object" && errorData !== null) {
+        errorMsg = Object.values(errorData).flat().join(" ");
+      } else if (err.response?.data?.detail) {
+        errorMsg = err.response.data.detail;
+      }
+
+      setMessage(errorMsg);
+    } finally {
+      setBookmarkLoading(false);
     }
   };
 
@@ -379,10 +430,13 @@ function PropertyDetails() {
             <button
               className="bookmark-button"
               onClick={handleBookmark}
+              disabled={bookmarkLoading}
             >
-              {bookmarked
-                ? "♥ Bookmarked"
-                : "♡ Bookmark Property"}
+              {bookmarkLoading
+                ? "Updating..."
+                : bookmarked
+                  ? "♥ Bookmarked"
+                  : "♡ Bookmark Property"}
             </button>
 
 

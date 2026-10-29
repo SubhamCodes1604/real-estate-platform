@@ -220,6 +220,12 @@ const handleVote = async (answerId, voteType) => {
           : answer
       )
     );
+
+    setAiAnswer((prev) =>
+      prev && prev.id === answerId
+        ? { ...prev, likes, dislikes, user_vote }
+        : prev
+    );
   } catch (err) {
     console.error("Vote error:", err);
 
@@ -362,6 +368,40 @@ const handleVote = async (answerId, voteType) => {
               ) : (
                 <p>{aiAnswer}</p>
               )}
+
+              <div className="answer-actions ai-answer-actions">
+                <div className="vote-controls">
+                  <button
+                    className={`vote-button${
+                      aiAnswer.user_vote === "like"
+                        ? " active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handleVote(aiAnswer.id, "like")
+                    }
+                    disabled={!isAuthenticated}
+                    title="Like this answer"
+                  >
+                    ▲ {aiAnswer.likes || 0}
+                  </button>
+
+                  <button
+                    className={`vote-button${
+                      aiAnswer.user_vote === "dislike"
+                        ? " active"
+                        : ""
+                    }`}
+                    onClick={() =>
+                      handleVote(aiAnswer.id, "dislike")
+                    }
+                    disabled={!isAuthenticated}
+                    title="Dislike this answer"
+                  >
+                    ▼ {aiAnswer.dislikes || 0}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
