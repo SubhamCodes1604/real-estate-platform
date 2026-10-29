@@ -7,28 +7,49 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+# Dependencies and build output
+node_modules/
+dist/
+dist-ssr/
 *.local
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
 # Environment variables and secrets
 .env
 .env.*
-
-# Keep example configuration files
 !.env.example
 
-# Python cache files
+# Python
 __pycache__/
 *.py[cod]
+venv/
+.venv/
+
+# Local databases and backups
+db.sqlite3
+db.sqlite3-*
+*.sqlite3.backup
+
+# Vite temporary files
+vite.config.js.timestamp-*.mjs
+vite.config.mjs.timestamp-*.mjs
+vite.config.cjs.timestamp-*.mjs
+vite.config.ts.timestamp-*.mjs
+vite.config.mts.timestamp-*.mjs
+vite.config.cts.timestamp-*.mjs
+vitest.config.js.timestamp-*.mjs
+vitest.config.mjs.timestamp-*.mjs
+vitest.config.cjs.timestamp-*.mjs
+vitest.config.ts.timestamp-*.mjs
+vitest.config.mts.timestamp-*.mjs
+vitest.config.cts.timestamp-*.mjs
