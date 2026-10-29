@@ -41,6 +41,10 @@ urlpatterns = [
         "api/dashboard/",
         include("dashboard.urls")
     ),
+    path(
+        "api/community/",
+        include("community.urls")
+),
 ]
 
 if settings.DEBUG:

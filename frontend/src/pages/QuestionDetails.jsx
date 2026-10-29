@@ -196,40 +196,40 @@ function QuestionDetails() {
   // LIKE / DISLIKE
   // =========================
 
-  const handleVote = async (answerId, voteType) => {
-    setActionError("");
 
-    try {
-      if (voteType === "like") {
-        await qaApi.likeAnswer(answerId);
-      } else {
-        await qaApi.dislikeAnswer(answerId);
-      }
+const handleVote = async (answerId, voteType) => {
+  setActionError("");
 
-      setAnswers((prev) =>
-        prev.map((a) =>
-          a.id === answerId
-            ? {
-                ...a,
-                likes: voteType === "like" ? (a.likes || 0) + 1 : a.likes || 0,
-                dislikes:
-                  voteType === "dislike"
-                    ? (a.dislikes || 0) + 1
-                    : a.dislikes || 0,
-                user_vote: voteType,
-              }
-            : a
-        )
-      );
-    } catch (err) {
-      console.error("Vote error:", err);
+  try {
+    const response =
+      voteType === "like"
+        ? await qaApi.likeAnswer(answerId)
+        : await qaApi.dislikeAnswer(answerId);
 
-      setActionError(
-        err.response?.data?.detail ||
-          "Unable to register your vote right now."
-      );
-    }
-  };
+    const { likes, dislikes, user_vote } = response.data;
+
+    setAnswers((previousAnswers) =>
+      previousAnswers.map((answer) =>
+        answer.id === answerId
+          ? {
+              ...answer,
+              likes,
+              dislikes,
+              user_vote,
+            }
+          : answer
+      )
+    );
+  } catch (err) {
+    console.error("Vote error:", err);
+
+    setActionError(
+      err.response?.data?.detail ||
+        "Unable to register your vote right now."
+    );
+  }
+};
+
 
   // =========================
   // ACCEPT ANSWER
