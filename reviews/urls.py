@@ -5,6 +5,7 @@ from .views import (
     PropertyReviewListView,
     PropertyAverageRatingView,
     RecentReviewListView,
+    ReviewDetailView,
 )
 
 urlpatterns = [
@@ -30,5 +31,11 @@ urlpatterns = [
         "recent/",
         RecentReviewListView.as_view(),
         name="recent-reviews"
+    ),
+
+    path(
+        "<int:pk>/",
+        ReviewDetailView.as_view(),
+        name="review-detail"
     ),
 ]
