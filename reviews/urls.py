@@ -4,7 +4,9 @@ from .views import (
     AddReviewView,
     PropertyReviewListView,
     PropertyAverageRatingView,
+    PropertyReviewSummaryView,
     RecentReviewListView,
+    ReviewDetailView,
 )
 
 urlpatterns = [
@@ -12,6 +14,12 @@ urlpatterns = [
         "add/",
         AddReviewView.as_view(),
         name="add-review"
+    ),
+
+    path(
+        "<int:pk>/",
+        ReviewDetailView.as_view(),
+        name="review-detail"
     ),
 
     path(
@@ -24,6 +32,12 @@ urlpatterns = [
         "property/<int:property_id>/average/",
         PropertyAverageRatingView.as_view(),
         name="property-average-rating"
+    ),
+
+    path(
+        "property/<int:property_id>/summary/",
+        PropertyReviewSummaryView.as_view(),
+        name="property-review-summary"
     ),
 
     path(

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import PropertyReviews from "../components/PropertyReviews";
 import "./PropertyDetails.css";
 
 function PropertyDetails() {
@@ -537,6 +538,13 @@ function PropertyDetails() {
           </p>
 
         )}
+
+
+        {/* ========================= */}
+        {/* PROPERTY REVIEWS */}
+        {/* ========================= */}
+
+        <PropertyReviews propertyId={property.id} />
 
 
         {/* ========================= */}
