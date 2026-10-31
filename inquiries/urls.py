@@ -2,7 +2,8 @@ from django.urls import path
 from .views import (
     CreateInquiryView,
     MyInquiryView,
-    PropertyInquiryListView
+    PropertyInquiryListView,
+    RespondToInquiryView,
 )
 
 urlpatterns = [
@@ -22,5 +23,10 @@ urlpatterns = [
         "received/",
         PropertyInquiryListView.as_view(),
     name="received-inquiries"
+    ),
+    path(
+        "<int:pk>/respond/",
+        RespondToInquiryView.as_view(),
+        name="respond-to-inquiry"
     ),
 ]

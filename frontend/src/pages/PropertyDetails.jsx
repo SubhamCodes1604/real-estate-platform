@@ -1,7 +1,9 @@
+
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import PropertyReviews from "../components/PropertyReviews";
 import "./PropertyDetails.css";
 
 function PropertyDetails() {
@@ -17,6 +19,7 @@ function PropertyDetails() {
   const [bookmarkLoading, setBookmarkLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [inquiryMessage, setInquiryMessage] = useState("");
+  const [inquiryLoading, setInquiryLoading] = useState(false);
 
   // =========================
   // ML RECOMMENDATIONS
@@ -279,9 +282,15 @@ function PropertyDetails() {
 
     e.preventDefault();
 
-    if (!inquiryMessage.trim()) {
+    const trimmedMessage = inquiryMessage.trim();
+
+    if (!trimmedMessage || inquiryLoading) {
+      setMessage("Please enter a message before sending.");
       return;
     }
+
+    setInquiryLoading(true);
+    setMessage("");
 
     try {
 
@@ -289,7 +298,7 @@ function PropertyDetails() {
         "/inquiries/create/",
         {
           property: property.id,
-          message: inquiryMessage,
+          message: trimmedMessage,
         }
       );
 
@@ -306,10 +315,15 @@ function PropertyDetails() {
         error
       );
 
-      setMessage(
-        error.response?.data?.detail ||
-        "Unable to send inquiry."
-      );
+      const errorData = error.response?.data;
+      const errorMessage =
+        typeof errorData === "object" && errorData
+          ? Object.values(errorData).flat().join(" ")
+          : errorData?.detail || "Unable to send inquiry.";
+
+      setMessage(errorMessage);
+    } finally {
+      setInquiryLoading(false);
     }
   };
 
@@ -469,8 +483,11 @@ function PropertyDetails() {
                 <button
                   type="submit"
                   className="inquiry-button"
+                  disabled={inquiryLoading}
                 >
-                  Send Inquiry
+                  {inquiryLoading
+                    ? "Sending..."
+                    : "Send Inquiry"}
                 </button>
 
               </form>
@@ -537,6 +554,13 @@ function PropertyDetails() {
           </p>
 
         )}
+
+
+        {/* ========================= */}
+        {/* PROPERTY REVIEWS */}
+        {/* ========================= */}
+
+        <PropertyReviews propertyId={property.id} />
 
 
         {/* ========================= */}
@@ -701,6 +725,7 @@ function PropertyDetails() {
           )}
 
         </section>
+
 
 
         {/* ========================= */}

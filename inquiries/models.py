@@ -20,6 +20,16 @@ class Inquiry(models.Model):
 
     message = models.TextField()
 
+    response = models.TextField(
+        blank=True,
+        default=""
+    )
+
+    responded_at = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
     created_at = models.DateTimeField(
         auto_now_add=True
     )

@@ -1,3 +1,4 @@
+
 from django.urls import path
 
 from .views import (
@@ -5,9 +6,12 @@ from .views import (
     PropertyReviewListView,
     PropertyAverageRatingView,
     RecentReviewListView,
+    ReviewDetailView,
+    MyPropertyReviewView,
 )
 
 urlpatterns = [
+
     path(
         "add/",
         AddReviewView.as_view(),
@@ -27,8 +31,21 @@ urlpatterns = [
     ),
 
     path(
+        "property/<int:property_id>/my-review/",
+        MyPropertyReviewView.as_view(),
+        name="my-property-review"
+    ),
+
+    path(
         "recent/",
         RecentReviewListView.as_view(),
         name="recent-reviews"
     ),
+
+    path(
+        "<int:pk>/",
+        ReviewDetailView.as_view(),
+        name="review-detail"
+    ),
+
 ]

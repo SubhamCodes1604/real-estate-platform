@@ -1,30 +1,34 @@
-<<<<<<< HEAD
+# Environment variables
 .env
 .env.*
 !.env.example
 
+# Python
 __pycache__/
 *.py[cod]
 venv/
-<<<<<<< HEAD
-=======
-=======
->>>>>>> feature/phase-1-ui-enhancements
+*.sqlite3
+
+# Node
 node_modules/
-.env
+
+# Vite
 vite.config.js.timestamp-*.mjs
 vite.config.mjs.timestamp-*.mjs
 vite.config.cjs.timestamp-*.mjs
 vite.config.ts.timestamp-*.mjs
 vite.config.mts.timestamp-*.mjs
 vite.config.cts.timestamp-*.mjs
+
+# Vitest
 vitest.config.js.timestamp-*.mjs
 vitest.config.mjs.timestamp-*.mjs
 vitest.config.cjs.timestamp-*.mjs
 vitest.config.ts.timestamp-*.mjs
 vitest.config.mts.timestamp-*.mjs
 vitest.config.cts.timestamp-*.mjs
-<<<<<<< HEAD
-=======
->>>>>>> 7b3c5d1 (Added .gitignore)
->>>>>>> feature/phase-1-ui-enhancements
+
+# Local databases and backups
+db.sqlite3
+db.sqlite3.backup
+db.sqlite3.backup-before-reviews
