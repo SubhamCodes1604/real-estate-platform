@@ -30,8 +30,19 @@ class InquirySerializer(serializers.ModelSerializer):
         )
 
         read_only_fields = (
+            "id",
             "buyer",
             "buyer_username",
             "property_details",
             "created_at",
         )
+
+    def validate_message(self, value):
+
+        if not value or not value.strip():
+
+            raise serializers.ValidationError(
+                "Message cannot be empty."
+            )
+
+        return value.strip()
