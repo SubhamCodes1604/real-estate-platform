@@ -25,6 +25,8 @@ import EditProperty from "./pages/EditProperty";
 import AgentDashboard from "./pages/AgentDashboard";
 import Questions from "./pages/Questions";
 import QuestionDetails from "./pages/QuestionDetails";
+import BulkUpload from "./pages/BulkUpload";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   return (
@@ -76,6 +78,19 @@ function App() {
               element={<QuestionDetails />}
             />
 
+
+            {/* ==================== */}
+            {/* ADMIN PAGES */}
+            {/* ==================== */}
+
+            <Route
+              path="/admin-dashboard"
+              element={
+                <ProtectedRoute allowedRoles={["ADMIN"]}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
 
             {/* ==================== */}
             {/* USER PAGES */}
@@ -154,6 +169,15 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={["AGENT"]}>
                   <EditProperty />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/bulk-upload"
+              element={
+                <ProtectedRoute allowedRoles={["AGENT"]}>
+                  <BulkUpload />
                 </ProtectedRoute>
               }
             />

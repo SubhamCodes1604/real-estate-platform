@@ -93,12 +93,16 @@ function Navbar() {
                   <NavLink to="/received-inquiries" className={navLinkClass}>
                     Received Inquiries
                   </NavLink>
+
+                  <NavLink to="/bulk-upload" className={navLinkClass}>
+                    Bulk Upload
+                  </NavLink>
                 </>
               )}
 
               {/* ADMIN */}
               {userRole === "ADMIN" && (
-                <NavLink to="/dashboard" className={navLinkClass}>
+                <NavLink to="/admin-dashboard" className={navLinkClass}>
                   Dashboard
                 </NavLink>
               )}
@@ -198,12 +202,16 @@ function Navbar() {
                     <Link to="/received-inquiries" onClick={closeMenu}>
                       Received Inquiries
                     </Link>
+
+                    <Link to="/bulk-upload" onClick={closeMenu}>
+                      Bulk Upload
+                    </Link>
                   </>
                 )}
 
                 {/* ADMIN */}
                 {userRole === "ADMIN" && (
-                  <Link to="/dashboard" onClick={closeMenu}>
+                  <Link to="/admin-dashboard" onClick={closeMenu}>
                     Dashboard
                   </Link>
                 )}

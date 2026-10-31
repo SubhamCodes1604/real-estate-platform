@@ -45,6 +45,10 @@ urlpatterns = [
         "api/community/",
         include("community.urls")
 ),
+    path(
+        "api/bulk-upload/",
+        include("bulk_uploads.urls")
+),
 ]
 
 if settings.DEBUG:
