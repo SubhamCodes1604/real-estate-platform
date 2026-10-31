@@ -166,6 +166,36 @@ function Inquiries() {
                 <p>{inquiry.message}</p>
               </div>
 
+              {!isAgent && (
+                <div className="inquiry-response-section">
+                  <span className="inquiry-message-label">
+                    Agent's Response
+                  </span>
+
+                  {inquiry.is_answered ? (
+                    <div className="inquiry-response-display">
+                      <p>{inquiry.response}</p>
+                      {inquiry.responded_at && (
+                        <span className="inquiry-response-timestamp">
+                          Responded on{" "}
+                          {new Date(
+                            inquiry.responded_at
+                          ).toLocaleDateString("en-IN", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="inquiry-response-pending">
+                      Pending — waiting for agent response.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {inquiry.property_details && (
                 <Link
                   to={`/properties/${inquiry.property_details.id}`}

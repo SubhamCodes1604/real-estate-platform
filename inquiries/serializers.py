@@ -16,6 +16,8 @@ class InquirySerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    is_answered = serializers.SerializerMethodField()
+
     class Meta:
         model = Inquiry
 
@@ -26,6 +28,9 @@ class InquirySerializer(serializers.ModelSerializer):
             "buyer",
             "buyer_username",
             "message",
+            "response",
+            "responded_at",
+            "is_answered",
             "created_at",
         )
 
@@ -34,6 +39,9 @@ class InquirySerializer(serializers.ModelSerializer):
             "buyer",
             "buyer_username",
             "property_details",
+            "response",
+            "responded_at",
+            "is_answered",
             "created_at",
         )
 
@@ -46,3 +54,7 @@ class InquirySerializer(serializers.ModelSerializer):
             )
 
         return value.strip()
+
+    def get_is_answered(self, obj):
+
+        return bool(obj.response and obj.response.strip())

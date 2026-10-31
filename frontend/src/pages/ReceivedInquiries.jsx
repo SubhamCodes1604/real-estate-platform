@@ -8,6 +8,11 @@ function ReceivedInquiries() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const [responseDrafts, setResponseDrafts] = useState({});
+  const [submittingId, setSubmittingId] = useState(null);
+  const [responseErrors, setResponseErrors] = useState({});
+  const [successId, setSuccessId] = useState(null);
+
   useEffect(() => {
     const fetchReceivedInquiries = async () => {
       try {
@@ -34,6 +39,67 @@ function ReceivedInquiries() {
 
     fetchReceivedInquiries();
   }, []);
+
+  const handleResponseChange = (inquiryId, value) => {
+    setResponseDrafts((prev) => ({
+      ...prev,
+      [inquiryId]: value,
+    }));
+
+    setResponseErrors((prev) => ({
+      ...prev,
+      [inquiryId]: null,
+    }));
+    setSuccessId(null);
+  };
+
+  const handleRespond = async (inquiryId) => {
+    const draft = responseDrafts[inquiryId];
+
+    if (!draft || !draft.trim()) {
+      setResponseErrors((prev) => ({
+        ...prev,
+        [inquiryId]: "Response cannot be empty.",
+      }));
+      return;
+    }
+
+    setSubmittingId(inquiryId);
+    setResponseErrors((prev) => ({
+      ...prev,
+      [inquiryId]: null,
+    }));
+
+    try {
+      const response = await api.patch(
+        `/inquiries/${inquiryId}/respond/`,
+        { response: draft }
+      );
+
+      setInquiries((prev) =>
+        prev.map((inq) =>
+          inq.id === inquiryId ? response.data : inq
+        )
+      );
+
+      setResponseDrafts((prev) => ({
+        ...prev,
+        [inquiryId]: "",
+      }));
+
+      setSuccessId(inquiryId);
+    } catch (err) {
+      setResponseErrors((prev) => ({
+        ...prev,
+        [inquiryId]:
+          err.response?.data?.response ||
+          err.response?.data?.detail ||
+          "Unable to submit response.",
+      }));
+    } finally {
+      setSubmittingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -119,6 +185,68 @@ function ReceivedInquiries() {
                   Buyer's Message
                 </span>
                 <p>{inquiry.message}</p>
+              </div>
+
+              <div className="inquiry-response-section">
+                <span className="received-inquiry-message-label">
+                  Your Response
+                </span>
+
+                {inquiry.is_answered ? (
+                  <div className="inquiry-response-display">
+                    <p>{inquiry.response}</p>
+                    {inquiry.responded_at && (
+                      <span className="inquiry-response-timestamp">
+                        Responded on{" "}
+                        {new Date(
+                          inquiry.responded_at
+                        ).toLocaleDateString("en-IN", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="inquiry-response-pending">
+                    No response yet.
+                  </p>
+                )}
+
+                <textarea
+                  className="inquiry-response-textarea"
+                  placeholder="Type your response to this buyer..."
+                  value={responseDrafts[inquiry.id] || ""}
+                  onChange={(e) =>
+                    handleResponseChange(inquiry.id, e.target.value)
+                  }
+                  rows={3}
+                />
+
+                {responseErrors[inquiry.id] && (
+                  <p className="inquiry-response-error">
+                    {responseErrors[inquiry.id]}
+                  </p>
+                )}
+
+                {successId === inquiry.id && (
+                  <p className="inquiry-response-success">
+                    Response saved successfully.
+                  </p>
+                )}
+
+                <button
+                  className="inquiry-response-submit"
+                  disabled={submittingId === inquiry.id}
+                  onClick={() => handleRespond(inquiry.id)}
+                >
+                  {submittingId === inquiry.id
+                    ? "Saving..."
+                    : inquiry.is_answered
+                    ? "Update Response"
+                    : "Send Response"}
+                </button>
               </div>
 
               {inquiry.property_details && (

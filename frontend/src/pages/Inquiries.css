@@ -246,3 +246,33 @@
     align-items: flex-start;
   }
 }
+
+/* ========================= */
+/* RESPONSE SECTION */
+/* ========================= */
+
+.inquiry-response-section {
+  padding: var(--space-4);
+  background: var(--color-surface-hover);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.inquiry-response-display p {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-2);
+}
+
+.inquiry-response-timestamp {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
+.inquiry-response-pending {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin-top: var(--space-2);
+}
