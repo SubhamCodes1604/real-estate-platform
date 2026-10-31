@@ -309,3 +309,93 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* USER MANAGEMENT */
+
+.admin-user-filters {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.admin-user-search {
+  flex: 1;
+  min-width: 200px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.admin-user-search:focus {
+  outline: none;
+  border-color: var(--color-primary);
+}
+
+.admin-user-role-filter {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  background: var(--color-surface);
+}
+
+.admin-user-role-badge {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.admin-user-role-badge.user {
+  background: var(--color-primary);
+  color: white;
+}
+
+.admin-user-role-badge.agent {
+  background: var(--color-success);
+  color: white;
+}
+
+.admin-user-role-badge.admin {
+  background: var(--color-error);
+  color: white;
+}
+
+.admin-user-toggle {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+}
+
+.admin-user-activate {
+  background: var(--color-success);
+  color: white;
+}
+
+.admin-user-deactivate {
+  background: var(--color-error);
+  color: white;
+}
+
+.admin-user-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-user-success {
+  padding: var(--space-3);
+  background: var(--color-success-light, #e8f5e9);
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-3);
+}
+
+.admin-user-success p {
+  font-size: var(--text-sm);
+  color: var(--color-success);
+}

@@ -371,6 +371,28 @@ function PropertyDetails() {
 
 
         {/* ========================= */}
+        {/* GALLERY IMAGES */}
+        {/* ========================= */}
+
+        {property.gallery_images && property.gallery_images.length > 0 && (
+          <section className="property-gallery">
+            <h2>Gallery</h2>
+            <div className="property-gallery-grid">
+              {property.gallery_images.map((img) => (
+                <div className="property-gallery-item" key={img.id}>
+                  <img
+                    src={img.image}
+                    alt={img.caption || property.title}
+                    className="property-gallery-image"
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+
+        {/* ========================= */}
         {/* PROPERTY FEATURES */}
         {/* ========================= */}
 
