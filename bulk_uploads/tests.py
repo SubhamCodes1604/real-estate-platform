@@ -160,9 +160,8 @@ class SuccessfulImportTest(BulkUploadTestBase):
         zip_bytes = create_zip_bytes([make_valid_row()], {"PROP001": [img]})
 
         response = self.post_zip(zip_bytes, "preview")
-        if response.status_code != 200:
-            print("DEBUG preview response:", response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["valid_count"], 1)
         self.assertEqual(response.data["invalid_count"], 0)
 
 

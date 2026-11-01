@@ -45,10 +45,14 @@ class IsAgent(IsAuthenticated):
         )
 
 
-def validate_zip_path(path, base_dir):
+def validate_zip_path(path, base_dir="/"):
     """Prevent path traversal in ZIP entries."""
-    full_path = os.path.normpath(os.path.join(base_dir, path))
-    return full_path.startswith(os.path.normpath(base_dir) + os.sep)
+    normalized = os.path.normpath(path)
+    if ".." in normalized.split(os.sep):
+        return False
+    if os.path.isabs(normalized):
+        return False
+    return True
 
 
 def parse_excel_row(row, row_num):
@@ -262,6 +266,13 @@ def read_zip_contents(zip_file):
             f"Maximum is {MAX_PROPERTIES} properties per ZIP."
         )
 
+    # Check all ZIP entries for path traversal
+    for name in names:
+        if not validate_zip_path(name):
+            raise ValueError(
+                f"Unsafe ZIP path detected: {name}"
+            )
+
     # Collect images
     image_map = {}
     image_dir_prefix = "images/"
@@ -277,11 +288,6 @@ def read_zip_contents(zip_file):
 
             if ext not in VALID_IMAGE_EXTENSIONS:
                 continue
-
-            if not validate_zip_path(name, "/"):
-                raise ValueError(
-                    f"Unsafe ZIP path detected: {name}"
-                )
 
             image_map.setdefault(folder, []).append(name)
 

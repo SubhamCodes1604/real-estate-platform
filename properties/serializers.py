@@ -14,7 +14,7 @@ class PropertyImageSerializer(serializers.ModelSerializer):
 class PropertySerializer(serializers.ModelSerializer):
 
     gallery_images = PropertyImageSerializer(
-        source="gallery_images", many=True, read_only=True
+        many=True, read_only=True
     )
 
     class Meta:
