@@ -1,49 +1,54 @@
+
 from decimal import Decimal
 
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import (
-    MultiPartParser,
-    FormParser
-)
-from .models import Property
-from .serializers import PropertySerializer
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAdminUser
-from rest_framework import status
+from rest_framework import status, filters
+
 from django.db.models import Q, Case, When, Value, IntegerField
-from rest_framework import filters
-from ai_engine.services import get_similar_properties, get_personalized_recommendations
+
+from .models import Property
+from .serializers import PropertySerializer
+
+from ai_engine.services import (
+    get_similar_properties,
+    get_personalized_recommendations
+)
+
 
 class CreatePropertyView(generics.CreateAPIView):
-
     serializer_class = PropertySerializer
-
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
-    def perform_create(self, serializer):
 
-        serializer.save(
-            created_by=self.request.user
-        )
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
 
 class PropertyListView(generics.ListAPIView):
-
     serializer_class = PropertySerializer
     filter_backends = [filters.OrderingFilter]
 
-    ordering_fields = [
-        "price",
-        "created_at",
-        "bedrooms",
-    ]
-
+    ordering_fields = ["price", "created_at", "bedrooms"]
     ordering = ["-created_at"]
 
     def get_queryset(self):
+        user = self.request.user
 
-        queryset = Property.objects.filter(is_approved=True)
+        # Admin can view all properties
+        if user.is_authenticated and user.role == "ADMIN":
+            queryset = Property.objects.all()
+
+        # Agent can view only their own properties
+        elif user.is_authenticated and user.role == "AGENT":
+            queryset = Property.objects.filter(created_by=user)
+
+        # Buyers and visitors can view approved properties only
+        else:
+            queryset = Property.objects.filter(is_approved=True)
 
         search = self.request.query_params.get("search")
         city = self.request.query_params.get("city")
@@ -53,86 +58,74 @@ class PropertyListView(generics.ListAPIView):
         bedrooms = self.request.query_params.get("bedrooms")
 
         if bedrooms:
-            queryset = queryset.filter(
-            bedrooms=bedrooms
-        )
+            queryset = queryset.filter(bedrooms=bedrooms)
 
         if city:
-            queryset = queryset.filter(
-                city__icontains=city
-            )
+            queryset = queryset.filter(city__icontains=city)
 
         if property_type:
-            queryset = queryset.filter(
-                property_type=property_type
-            )
+            queryset = queryset.filter(property_type=property_type)
 
         if min_price:
-            queryset = queryset.filter(
-                price__gte=min_price
-            )
+            queryset = queryset.filter(price__gte=min_price)
 
         if max_price:
-            queryset = queryset.filter(
-                price__lte=max_price
-            )
+            queryset = queryset.filter(price__lte=max_price)
 
         if search:
             queryset = queryset.filter(
-            Q(title__icontains=search) |
-            Q(description__icontains=search) |
-            Q(city__icontains=search) |
-            Q(address__icontains=search)
-        )
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(city__icontains=search) |
+                Q(address__icontains=search)
+            )
+
         return queryset
 
-class PropertyDetailView(generics.RetrieveAPIView):
 
+class PropertyDetailView(generics.RetrieveAPIView):
     serializer_class = PropertySerializer
 
     def get_queryset(self):
+        user = self.request.user
 
-        return Property.objects.filter(
-            is_approved=True
-        )
-    
+        # Admin can view every property
+        if user.is_authenticated and user.role == "ADMIN":
+            return Property.objects.all()
+
+        # Agent can view only their own properties
+        if user.is_authenticated and user.role == "AGENT":
+            return Property.objects.filter(created_by=user)
+
+        # Buyers and visitors can view approved properties only
+        return Property.objects.filter(is_approved=True)
+
+
 class PropertyUpdateView(generics.UpdateAPIView):
-
     serializer_class = PropertySerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
-        return Property.objects.filter(
-            created_by=self.request.user
-        )
+        return Property.objects.filter(created_by=self.request.user)
 
     def perform_update(self, serializer):
+        serializer.save(created_by=self.request.user)
 
-        serializer.save(
-            created_by=self.request.user
-        )
 
 class PropertyDeleteView(generics.DestroyAPIView):
-
     serializer_class = PropertySerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        return Property.objects.filter(created_by=self.request.user)
 
-        return Property.objects.filter(
-            created_by=self.request.user
-        )
 
 class ApprovePropertyView(APIView):
-
     permission_classes = [IsAdminUser]
 
     def patch(self, request, pk):
-
         try:
             property_obj = Property.objects.get(pk=pk)
-
             property_obj.is_approved = True
             property_obj.save()
 
@@ -142,7 +135,6 @@ class ApprovePropertyView(APIView):
             )
 
         except Property.DoesNotExist:
-
             return Response(
                 {"error": "Property not found"},
                 status=status.HTTP_404_NOT_FOUND
@@ -150,14 +142,11 @@ class ApprovePropertyView(APIView):
 
 
 class RejectPropertyView(APIView):
-
     permission_classes = [IsAdminUser]
 
     def patch(self, request, pk):
-
         try:
             property_obj = Property.objects.get(pk=pk)
-
             property_obj.is_approved = False
             property_obj.save()
 
@@ -167,7 +156,6 @@ class RejectPropertyView(APIView):
             )
 
         except Property.DoesNotExist:
-
             return Response(
                 {"error": "Property not found"},
                 status=status.HTTP_404_NOT_FOUND
@@ -175,66 +163,56 @@ class RejectPropertyView(APIView):
 
 
 class PendingPropertiesView(generics.ListAPIView):
-
     serializer_class = PropertySerializer
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
-
         return Property.objects.filter(
             is_approved=False
         ).order_by("-created_at")
 
 
 class AllPropertiesView(generics.ListAPIView):
-
     serializer_class = PropertySerializer
     permission_classes = [IsAdminUser]
 
     def get_queryset(self):
-
         return Property.objects.all().order_by("-created_at")
 
-class MyPropertiesView(generics.ListAPIView):
 
+class MyPropertiesView(generics.ListAPIView):
     serializer_class = PropertySerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
         return Property.objects.filter(
             created_by=self.request.user
         )
 
-class FeaturedPropertyListView(generics.ListAPIView):
 
+class FeaturedPropertyListView(generics.ListAPIView):
     serializer_class = PropertySerializer
 
     def get_queryset(self):
-
         return Property.objects.filter(
             is_featured=True,
             is_approved=True
         )
 
-class RecentPropertyListView(generics.ListAPIView):
 
+class RecentPropertyListView(generics.ListAPIView):
     serializer_class = PropertySerializer
 
     def get_queryset(self):
-
         return Property.objects.filter(
             is_approved=True
-        ).order_by(
-            "-created_at"
-        )
+        ).order_by("-created_at")
+
 
 class PropertyRecommendationView(generics.ListAPIView):
-
     serializer_class = PropertySerializer
 
     def get_queryset(self):
-
         property_id = self.request.query_params.get("property_id")
 
         if not property_id:
@@ -276,13 +254,12 @@ class PropertyRecommendationView(generics.ListAPIView):
 
         return queryset.order_by("-created_at")[:10]
 
-class PersonalizedRecommendationView(generics.ListAPIView):
 
+class PersonalizedRecommendationView(generics.ListAPIView):
     serializer_class = PropertySerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-
         user = self.request.user
 
         bookmarked_properties = Property.objects.filter(
@@ -291,29 +268,24 @@ class PersonalizedRecommendationView(generics.ListAPIView):
 
         # If user has no bookmarks
         if not bookmarked_properties.exists():
-
             return Property.objects.filter(
                 is_approved=True
             ).order_by("-created_at")[:10]
 
         # Get preferences from bookmarked properties
         cities = bookmarked_properties.values_list(
-            "city",
-            flat=True
+            "city", flat=True
         ).distinct()
 
         property_types = bookmarked_properties.values_list(
-            "property_type",
-            flat=True
+            "property_type", flat=True
         ).distinct()
 
         bedrooms = bookmarked_properties.values_list(
-            "bedrooms",
-            flat=True
+            "bedrooms", flat=True
         ).distinct()
 
-        # Find approved properties matching
-        # at least one preference
+        # Find approved properties matching at least one preference
         queryset = Property.objects.filter(
             is_approved=True
         ).exclude(
@@ -355,17 +327,15 @@ class PersonalizedRecommendationView(generics.ListAPIView):
 
         return queryset[:10]
 
+
 class MLPropertyRecommendationView(APIView):
 
     def get(self, request):
-
         property_id = request.query_params.get("property_id")
 
         if not property_id:
             return Response(
-                {
-                    "error": "property_id is required"
-                },
+                {"error": "property_id is required"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -374,15 +344,11 @@ class MLPropertyRecommendationView(APIView):
 
         except ValueError:
             return Response(
-                {
-                    "error": "property_id must be an integer"
-                },
+                {"error": "property_id must be an integer"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        recommendations = get_similar_properties(
-            property_id
-        )
+        recommendations = get_similar_properties(property_id)
 
         if not recommendations:
             return Response(
@@ -396,7 +362,6 @@ class MLPropertyRecommendationView(APIView):
         results = []
 
         for item in recommendations:
-
             property_obj = item["property"]
 
             results.append({
@@ -407,10 +372,7 @@ class MLPropertyRecommendationView(APIView):
                 "property_type": property_obj.property_type,
                 "bedrooms": property_obj.bedrooms,
                 "bathrooms": property_obj.bathrooms,
-                "similarity_score": round(
-                    item["score"],
-                    4
-                )
+                "similarity_score": round(item["score"], 4)
             })
 
         return Response(
@@ -421,12 +383,11 @@ class MLPropertyRecommendationView(APIView):
             status=status.HTTP_200_OK
         )
 
-class PersonalizedMLRecommendationView(APIView):
 
+class PersonalizedMLRecommendationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-
         recommendations = get_personalized_recommendations(
             request.user
         )
@@ -434,18 +395,10 @@ class PersonalizedMLRecommendationView(APIView):
         results = []
 
         for item in recommendations:
-
             property_obj = item["property"]
 
-            text_score = item.get(
-                "text_score",
-                0
-            )
-
-            numerical_score = item.get(
-                "numerical_score",
-                0
-            )
+            text_score = item.get("text_score", 0)
+            numerical_score = item.get("numerical_score", 0)
 
             reasons = []
 
@@ -469,9 +422,7 @@ class PersonalizedMLRecommendationView(APIView):
                     "has characteristics similar to your bookmarked properties"
                 )
 
-            reason = "Recommended because it " + ", ".join(
-                reasons
-            ) + "."
+            reason = "Recommended because it " + ", ".join(reasons) + "."
 
             results.append({
                 "id": property_obj.id,

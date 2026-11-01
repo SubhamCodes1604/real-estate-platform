@@ -206,3 +206,102 @@ class TokenRefreshTest(AuthTestBase):
             status.HTTP_200_OK,
         )
         self.assertIn("access", response.data)
+
+
+class AdminUserManagementTest(AuthTestBase):
+
+    def setUp(self):
+        super().setUp()
+        self.admin = User.objects.create_user(
+            username="testadmin",
+            password="TestPass123!",
+            role="ADMIN",
+            is_staff=True,
+        )
+
+    def test_admin_can_list_users(self):
+        token = self.get_jwt_token("testadmin", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.get("/api/accounts/admin/users/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_user_cannot_list_users(self):
+        token = self.get_jwt_token("testuser", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.get("/api/accounts/admin/users/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_agent_cannot_list_users(self):
+        token = self.get_jwt_token("testagent", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.get("/api/accounts/admin/users/")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unauthenticated_cannot_list_users(self):
+        response = self.client.get("/api/accounts/admin/users/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_admin_can_search_users(self):
+        token = self.get_jwt_token("testadmin", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.get("/api/accounts/admin/users/?search=testagent")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_admin_can_filter_by_role(self):
+        token = self.get_jwt_token("testadmin", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.get("/api/accounts/admin/users/?role=AGENT")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_admin_can_view_user_detail(self):
+        token = self.get_jwt_token("testadmin", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.get(f"/api/accounts/admin/users/{self.user.pk}/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["username"], "testuser")
+
+    def test_admin_can_deactivate_user(self):
+        token = self.get_jwt_token("testadmin", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.patch(
+            f"/api/accounts/admin/users/{self.user.pk}/status/",
+            {"is_active": False}, format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertFalse(response.data["is_active"])
+
+    def test_admin_cannot_deactivate_self(self):
+        token = self.get_jwt_token("testadmin", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.patch(
+            f"/api/accounts/admin/users/{self.admin.pk}/status/",
+            {"is_active": False}, format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_admin_can_activate_user(self):
+        self.user.is_active = False
+        self.user.save()
+        token = self.get_jwt_token("testadmin", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.patch(
+            f"/api/accounts/admin/users/{self.user.pk}/status/",
+            {"is_active": True}, format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["is_active"])
+
+    def test_user_cannot_deactivate_others(self):
+        token = self.get_jwt_token("testuser", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.patch(
+            f"/api/accounts/admin/users/{self.agent.pk}/status/",
+            {"is_active": False}, format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_password_not_exposed(self):
+        token = self.get_jwt_token("testadmin", "TestPass123!")
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+        response = self.client.get(f"/api/accounts/admin/users/{self.user.pk}/")
+        self.assertNotIn("password", response.data)

@@ -185,6 +185,14 @@ function AgentDashboard() {
               <h3>Received Inquiries</h3>
               <p>See questions and messages from interested buyers.</p>
             </Link>
+
+            <Link
+              to="/bulk-upload"
+              className="agent-action-card"
+            >
+              <h3>Bulk Upload</h3>
+              <p>Upload multiple properties at once using a ZIP file.</p>
+            </Link>
           </div>
         </section>
 

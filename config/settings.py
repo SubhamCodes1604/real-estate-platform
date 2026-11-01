@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'inquiries',
     'reviews',
     'dashboard',
+    'bulk_uploads',
 ]
 
 MIDDLEWARE = [
