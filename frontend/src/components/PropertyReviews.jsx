@@ -65,9 +65,19 @@ export default function PropertyReviews({ propertyId }) {
   }, [propertyId, isAuthenticated]);
 
   useEffect(() => {
-    if (!authLoading) {
-      loadInitialData();
-    }
+    if (authLoading) return;
+
+    let isActive = true;
+
+    Promise.resolve().then(() => {
+      if (isActive) {
+        loadInitialData();
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
   }, [authLoading, loadInitialData]);
 
   const refreshData = async () => {
