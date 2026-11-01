@@ -127,7 +127,7 @@ function BulkUpload() {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       setError("Unable to download template.");
     }
   };
