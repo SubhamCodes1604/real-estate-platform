@@ -179,5 +179,58 @@
 - **Response 200:** Updated inquiry object
 - **Rules:** Agent must own the property; response trimmed; first response sets `responded_at`; updates preserve original timestamp
 - **Error 401:** Unauthenticated
-- **Error 403:** Buyer/Admin/blocked; inquiry belongs to another agent's property
+- **Error 403:** Buyer or other non-agent roles
+- **Error 404:** Inquiry does not exist, or belongs to another agent's property (same response, so existence is not revealed)
 - **Error 400:** Empty or missing response
+
+## Phase 4: Role-Based Access Control and Security
+
+### Role Permission Classes
+Defined in `accounts/permissions.py` and used across all apps. Roles come from the custom `role` field on the user, not Django's `is_staff` flag.
+
+| Class | Allows |
+|---|---|
+| `IsAdminRole` | `role == ADMIN` |
+| `IsAgentRole` | `role == AGENT` |
+| `IsBuyerRole` | `role == USER` |
+| `IsAgentOrAdmin` | `role` is `AGENT` or `ADMIN` |
+| `IsOwnerOrAdmin` | Object owner (`created_by` or `user`) or `ADMIN` |
+
+### Role Matrix
+| Area | Anonymous | USER (buyer) | AGENT | ADMIN |
+|---|---|---|---|---|
+| Browse/detail properties | Approved only | Approved only | Approved + own (incl. pending) | All |
+| Create property | 401 | 403 | Yes | 403 |
+| Update/delete property | 401 | 404 for others' | Own only | All |
+| Approve/reject, pending, all properties | 401 | 403 | 403 | Yes |
+| Create inquiry | 401 | Yes (approved, not own) | 403 | 403 |
+| My inquiries | 401 | Own | 403 | 403 |
+| Received inquiries and respond | 401 | 403 | Own properties only (other: 404) | 403 |
+| Bookmarks | 401 | Own only | Own only | Own only |
+| Bookmark a property | 401 | Approved only | Approved only | Approved only |
+| Reviews create/edit/delete | 401 | Own only for edit/delete | Own only for edit/delete | Own only for edit/delete |
+| Admin users (list, detail, status) | 401 | 403 | 403 | Yes |
+| Admin dashboard stats | 401 | 403 | 403 | Yes |
+| Bulk upload | 401 | 403 | Yes | 403 |
+
+### Security Changes
+- Admin endpoints (users, dashboard, approve/reject, pending, all properties) require the `ADMIN` role. Accounts with only `is_staff` are denied.
+- Creating a property requires `AGENT`. Buyers receive 403.
+- Updating a property no longer reassigns ownership. Agents can update only their own listings; admins can update any listing.
+- `is_featured` is read-only in the property API. Agents cannot set it on create or update.
+- Agents can view other agents' approved properties. Pending listings stay hidden from everyone except their owner and admins.
+- Bookmarking a pending property returns 400 with the same message used for missing properties.
+- Inquiry respond returns 404 for both missing and non-owned inquiries.
+
+### Validation Rules (Property)
+- `price` must be greater than zero.
+- `area_sqft` must be greater than zero.
+- `bedrooms` and `bathrooms` cannot be negative.
+- `property_type` must be one of FLAT, HOUSE, VILLA, PLOT.
+- Existing bulk-upload protections are unchanged: ZIP size limit (50 MB), per-property image limit (10), image size limit (10 MB), allowed image extensions, and path traversal checks on every ZIP entry.
+
+### Tests
+- `accounts/test_permissions.py` covers role gating (admin role vs staff flag, anonymous, buyer create), property visibility and ownership, inquiry ownership, and bookmark eligibility and duplicates.
+- Run: `python manage.py test accounts.test_permissions`
+- Full suite: `python manage.py test`
+- Status: not yet executed in this environment (Django is not installed here).

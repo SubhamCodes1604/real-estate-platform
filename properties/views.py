@@ -2,7 +2,9 @@
 from decimal import Decimal
 
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
+
+from accounts.permissions import IsAdminRole, IsAgentRole, IsOwnerOrAdmin
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -21,7 +23,7 @@ from ai_engine.services import (
 
 class CreatePropertyView(generics.CreateAPIView):
     serializer_class = PropertySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAgentRole]
     parser_classes = [MultiPartParser, FormParser]
 
     def perform_create(self, serializer):
@@ -44,7 +46,7 @@ class PropertyListView(generics.ListAPIView):
 
         # Agent can view only their own properties
         elif user.is_authenticated and user.role == "AGENT":
-            queryset = Property.objects.filter(created_by=user)
+            queryset = Property.objects.filter(Q(is_approved=True) | Q(created_by=user))
 
         # Buyers and visitors can view approved properties only
         else:
@@ -95,33 +97,32 @@ class PropertyDetailView(generics.RetrieveAPIView):
 
         # Agent can view only their own properties
         if user.is_authenticated and user.role == "AGENT":
-            return Property.objects.filter(created_by=user)
+            return Property.objects.filter(Q(is_approved=True) | Q(created_by=user))
 
         # Buyers and visitors can view approved properties only
         return Property.objects.filter(is_approved=True)
 
 
-class PropertyUpdateView(generics.UpdateAPIView):
+class ManageablePropertyMixin:
     serializer_class = PropertySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsOwnerOrAdmin]
 
     def get_queryset(self):
+        if self.request.user.role == "ADMIN":
+            return Property.objects.all()
         return Property.objects.filter(created_by=self.request.user)
 
-    def perform_update(self, serializer):
-        serializer.save(created_by=self.request.user)
+
+class PropertyUpdateView(ManageablePropertyMixin, generics.UpdateAPIView):
+    pass
 
 
-class PropertyDeleteView(generics.DestroyAPIView):
-    serializer_class = PropertySerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Property.objects.filter(created_by=self.request.user)
+class PropertyDeleteView(ManageablePropertyMixin, generics.DestroyAPIView):
+    pass
 
 
 class ApprovePropertyView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def patch(self, request, pk):
         try:
@@ -142,7 +143,7 @@ class ApprovePropertyView(APIView):
 
 
 class RejectPropertyView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def patch(self, request, pk):
         try:
@@ -164,7 +165,7 @@ class RejectPropertyView(APIView):
 
 class PendingPropertiesView(generics.ListAPIView):
     serializer_class = PropertySerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def get_queryset(self):
         return Property.objects.filter(
@@ -174,7 +175,7 @@ class PendingPropertiesView(generics.ListAPIView):
 
 class AllPropertiesView(generics.ListAPIView):
     serializer_class = PropertySerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def get_queryset(self):
         return Property.objects.all().order_by("-created_at")

@@ -23,5 +23,26 @@ class PropertySerializer(serializers.ModelSerializer):
         read_only_fields = (
             "created_by",
             "is_approved",
+            "is_featured",
             "created_at",
         )
+
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Price must be greater than zero.")
+        return value
+
+    def validate_area_sqft(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Area must be greater than zero.")
+        return value
+
+    def validate_bedrooms(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Bedrooms cannot be negative.")
+        return value
+
+    def validate_bathrooms(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Bathrooms cannot be negative.")
+        return value

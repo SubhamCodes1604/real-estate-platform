@@ -29,7 +29,8 @@ class BookmarkSerializer(serializers.ModelSerializer):
 
         try:
             property_obj = Property.objects.get(
-            id=property_id
+            id=property_id,
+            is_approved=True
         )
         except Property.DoesNotExist:
             raise serializers.ValidationError(

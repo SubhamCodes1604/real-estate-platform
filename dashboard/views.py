@@ -9,12 +9,12 @@ from bookmarks.models import Bookmark
 from inquiries.models import Inquiry
 from reviews.models import Review
 from accounts.models import User
-from rest_framework.permissions import IsAdminUser
+from accounts.permissions import IsAdminRole
 
 
 class AdminStatsView(APIView):
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def get(self, request):
 
