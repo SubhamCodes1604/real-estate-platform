@@ -35,9 +35,6 @@ export default function PropertyReviews({ propertyId }) {
   const [error, setError] = useState("");
 
   const loadInitialData = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
     try {
       const [reviewData, summaryData] = await Promise.all([
         getPropertyReviews(propertyId),
