@@ -9,13 +9,13 @@ from django.db import transaction
 from django.utils import timezone
 
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 
 from properties.models import Property
 from accounts.models import User
+from accounts.permissions import IsAgentRole
 from .models import BulkUpload, PropertyImage
 from .serializers import BulkUploadSerializer
 
@@ -34,15 +34,6 @@ REQUIRED_COLUMNS = [
     "Bathrooms", "Area (sqft)", "Address",
     "City", "State", "Pincode",
 ]
-
-
-class IsAgent(IsAuthenticated):
-
-    def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role == "AGENT"
-        )
 
 
 def validate_zip_path(path, base_dir="/"):
@@ -297,7 +288,7 @@ def read_zip_contents(zip_file):
 class BulkUploadPreviewView(APIView):
     """Accepts a ZIP file and returns a preview without importing."""
 
-    permission_classes = [IsAgent]
+    permission_classes = [IsAgentRole]
 
     def post(self, request):
         zip_file = request.FILES.get("file") or request.FILES.get("zip")
@@ -369,7 +360,7 @@ class BulkUploadPreviewView(APIView):
 class BulkUploadImportView(APIView):
     """Imports properties from a previously validated ZIP file."""
 
-    permission_classes = [IsAgent]
+    permission_classes = [IsAgentRole]
 
     def post(self, request):
         zip_file = request.FILES.get("file") or request.FILES.get("zip")
@@ -529,7 +520,7 @@ class BulkUploadHistoryView(ListAPIView):
     """List bulk upload history for the authenticated agent."""
 
     serializer_class = BulkUploadSerializer
-    permission_classes = [IsAgent]
+    permission_classes = [IsAgentRole]
 
     def get_queryset(self):
         return BulkUpload.objects.filter(
@@ -541,7 +532,7 @@ class BulkUploadDetailView(RetrieveAPIView):
     """Retrieve details of a specific bulk upload."""
 
     serializer_class = BulkUploadSerializer
-    permission_classes = [IsAgent]
+    permission_classes = [IsAgentRole]
 
     def get_queryset(self):
         return BulkUpload.objects.filter(
@@ -552,7 +543,7 @@ class BulkUploadDetailView(RetrieveAPIView):
 class BulkUploadTemplateView(APIView):
     """Generate and return an Excel template for download."""
 
-    permission_classes = [IsAgent]
+    permission_classes = [IsAgentRole]
 
     def get(self, request):
         try:

@@ -68,7 +68,7 @@ function AdminDashboard() {
           ? response.data
           : response.data.results || [];
         setAllProperties(data);
-      } catch (err) {
+      } catch {
         setAllProperties([]);
       } finally {
         setAllPropertiesLoading(false);
@@ -116,7 +116,7 @@ function AdminDashboard() {
       if (stats) {
         setStats({ ...stats, approved_properties: stats.approved_properties + 1 });
       }
-    } catch (err) {
+    } catch {
       setPendingError("Unable to approve property.");
     } finally {
       setActionLoadingId(null);
@@ -128,7 +128,7 @@ function AdminDashboard() {
     try {
       await api.patch(`/properties/reject/${id}/`);
       setPendingProperties((prev) => prev.filter((p) => p.id !== id));
-    } catch (err) {
+    } catch {
       setPendingError("Unable to reject property.");
     } finally {
       setActionLoadingId(null);

@@ -32,3 +32,5 @@ vitest.config.cts.timestamp-*.mjs
 db.sqlite3
 db.sqlite3.backup
 db.sqlite3.backup-before-reviews
+# User-uploaded media files
+media/

@@ -1,37 +1,18 @@
-from rest_framework import generics, permissions, status
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework import generics, status
+from rest_framework.exceptions import NotFound, PermissionDenied, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from accounts.permissions import IsAgentRole, IsBuyerRole
 from properties.models import Property
 from .models import Inquiry
 from .serializers import InquirySerializer
 
 
-class IsBuyer(permissions.BasePermission):
-
-    def has_permission(self, request, view):
-
-        return (
-            request.user.is_authenticated
-            and request.user.role == "USER"
-        )
-
-
-class IsAgent(permissions.BasePermission):
-
-    def has_permission(self, request, view):
-
-        return (
-            request.user.is_authenticated
-            and request.user.role == "AGENT"
-        )
-
-
 class CreateInquiryView(generics.CreateAPIView):
 
     serializer_class = InquirySerializer
-    permission_classes = [IsBuyer]
+    permission_classes = [IsBuyerRole]
 
     def perform_create(self, serializer):
 
@@ -76,7 +57,7 @@ class CreateInquiryView(generics.CreateAPIView):
 class MyInquiryView(generics.ListAPIView):
 
     serializer_class = InquirySerializer
-    permission_classes = [IsBuyer]
+    permission_classes = [IsBuyerRole]
 
     def get_queryset(self):
 
@@ -90,7 +71,7 @@ class MyInquiryView(generics.ListAPIView):
 class PropertyInquiryListView(generics.ListAPIView):
 
     serializer_class = InquirySerializer
-    permission_classes = [IsAgent]
+    permission_classes = [IsAgentRole]
 
     def get_queryset(self):
 
@@ -103,7 +84,7 @@ class PropertyInquiryListView(generics.ListAPIView):
 
 class RespondToInquiryView(APIView):
 
-    permission_classes = [IsAgent]
+    permission_classes = [IsAgentRole]
 
     def patch(self, request, pk):
 
@@ -150,16 +131,10 @@ class RespondToInquiryView(APIView):
 
         except (Inquiry.DoesNotExist, ValueError, TypeError):
 
-            raise PermissionDenied(
-                "Inquiry not found or you do not have "
-                "permission to respond to it."
-            )
+            raise NotFound("Inquiry not found.")
 
         if inquiry.property.created_by_id != request.user.id:
 
-            raise PermissionDenied(
-                "You can only respond to inquiries "
-                "concerning your own properties."
-            )
+            raise NotFound("Inquiry not found.")
 
         return inquiry

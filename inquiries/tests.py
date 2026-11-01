@@ -644,7 +644,7 @@ class RespondToInquiryTest(InquiryTestBase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
         )
 
     def test_empty_response_rejected(self):
@@ -759,5 +759,5 @@ class RespondToInquiryTest(InquiryTestBase):
 
         self.assertEqual(
             response.status_code,
-            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
         )

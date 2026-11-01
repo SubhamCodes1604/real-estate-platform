@@ -1,11 +1,12 @@
 from django.shortcuts import render
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status as http_status
 
 from .models import User
+from .permissions import IsAdminRole
 from .serializers import RegisterSerializer, UserProfileSerializer, AdminUserSerializer
 
 
@@ -28,7 +29,7 @@ class AdminUserListView(generics.ListAPIView):
     """List all users with search and role filtering. Admin only."""
 
     serializer_class = AdminUserSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def get_queryset(self):
         queryset = User.objects.all().order_by("-date_joined")
@@ -52,14 +53,14 @@ class AdminUserDetailView(generics.RetrieveAPIView):
     """Retrieve individual user details. Admin only."""
 
     serializer_class = AdminUserSerializer
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
     queryset = User.objects.all()
 
 
 class AdminUserStatusView(APIView):
     """Activate or deactivate a user account. Admin only."""
 
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminRole]
 
     def patch(self, request, pk):
         try:

@@ -18,7 +18,7 @@ export function AuthProvider({ children }) {
       const response = await api.get("/accounts/profile/");
 
       setUser(response.data);
-    } catch (error) {
+    } catch {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
 
@@ -85,6 +85,8 @@ export function AuthProvider({ children }) {
   );
 }
 
+// The provider and hook intentionally share this context module.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext);
 }

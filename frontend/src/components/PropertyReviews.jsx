@@ -35,9 +35,6 @@ export default function PropertyReviews({ propertyId }) {
   const [error, setError] = useState("");
 
   const loadInitialData = useCallback(async () => {
-    setLoading(true);
-    setError("");
-
     try {
       const [reviewData, summaryData] = await Promise.all([
         getPropertyReviews(propertyId),
@@ -68,9 +65,19 @@ export default function PropertyReviews({ propertyId }) {
   }, [propertyId, isAuthenticated]);
 
   useEffect(() => {
-    if (!authLoading) {
-      loadInitialData();
-    }
+    if (authLoading) return;
+
+    let isActive = true;
+
+    Promise.resolve().then(() => {
+      if (isActive) {
+        loadInitialData();
+      }
+    });
+
+    return () => {
+      isActive = false;
+    };
   }, [authLoading, loadInitialData]);
 
   const refreshData = async () => {
