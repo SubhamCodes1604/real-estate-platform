@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import qaApi from "../services/qaApi";
 import "./QuestionDetails.css";
 
 function QuestionDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
   const [question, setQuestion] = useState(null);
@@ -29,6 +30,14 @@ function QuestionDetails() {
   const [answerFormSuccess, setAnswerFormSuccess] = useState("");
 
   const [actionError, setActionError] = useState("");
+  const [editingQuestion, setEditingQuestion] = useState(false);
+  const [questionTitle, setQuestionTitle] = useState("");
+  const [questionText, setQuestionText] = useState("");
+  const [editingAnswerId, setEditingAnswerId] = useState(null);
+  const [editedAnswerBody, setEditedAnswerBody] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const isAdmin = user?.role === "ADMIN";
+  const canManageQuestion = Boolean(isQuestionOwner || isAdmin);
 
   const isQuestionOwner =
     user &&
@@ -190,6 +199,57 @@ function QuestionDetails() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const startQuestionEdit = () => {
+    setQuestionTitle(question.title);
+    setQuestionText(question.body || "");
+    setEditingQuestion(true);
+    setActionError("");
+  };
+
+  const saveQuestionEdit = async (e) => {
+    e.preventDefault();
+    if (!questionTitle.trim()) return setActionError("Question title cannot be empty.");
+    try {
+      setSavingEdit(true);
+      const response = await qaApi.updateQuestion(id, { title: questionTitle.trim(), body: questionText.trim() });
+      setQuestion(response.data);
+      setEditingQuestion(false);
+      setActionError("");
+    } catch (err) { setActionError(err.response?.data?.detail || "Unable to update this question."); }
+    finally { setSavingEdit(false); }
+  };
+
+  const deleteQuestion = async () => {
+    if (!window.confirm("Delete this question and all its answers? This cannot be undone.")) return;
+    try { await qaApi.deleteQuestion(id); navigate("/questions"); }
+    catch (err) { setActionError(err.response?.data?.detail || "Unable to delete this question."); }
+  };
+
+  const startAnswerEdit = (answer) => {
+    setEditingAnswerId(answer.id);
+    setEditedAnswerBody(answer.body);
+    setActionError("");
+  };
+
+  const saveAnswerEdit = async (e, answerId) => {
+    e.preventDefault();
+    if (!editedAnswerBody.trim()) return setActionError("Answer cannot be empty.");
+    try {
+      setSavingEdit(true);
+      const response = await qaApi.updateAnswer(answerId, { body: editedAnswerBody.trim() });
+      setAnswers((previous) => previous.map((answer) => answer.id === answerId ? { ...answer, ...response.data } : answer));
+      setEditingAnswerId(null);
+      setActionError("");
+    } catch (err) { setActionError(err.response?.data?.detail || "Unable to update this answer."); }
+    finally { setSavingEdit(false); }
+  };
+
+  const deleteAnswer = async (answerId) => {
+    if (!window.confirm("Delete this answer? This cannot be undone.")) return;
+    try { await qaApi.deleteAnswer(answerId); setAnswers((previous) => previous.filter((answer) => answer.id !== answerId)); }
+    catch (err) { setActionError(err.response?.data?.detail || "Unable to delete this answer."); }
   };
 
   // =========================
