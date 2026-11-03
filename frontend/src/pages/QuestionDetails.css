@@ -391,3 +391,61 @@
     align-items: flex-start;
   }
 }
+
+
+/* Q&A edit and delete controls */
+.qa-management-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.qa-management-actions button {
+  padding: 8px 13px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+}
+
+.qa-management-actions button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.qa-management-actions .qa-delete-button {
+  border-color: #dc2626;
+  background: #dc2626;
+}
+
+.qa-management-actions .qa-cancel-button {
+  border-color: #9ca3af;
+  background: #fff;
+  color: #374151;
+}
+
+.qa-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.qa-edit-form input,
+.qa-edit-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font: inherit;
+}
+
+.qa-edit-form textarea {
+  resize: vertical;
+}
