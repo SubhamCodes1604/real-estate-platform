@@ -56,6 +56,11 @@ class QuestionListCreateView(generics.ListCreateAPIView):
                     | Q(body__icontains=keyword)
                 )
 
+        author = self.request.query_params.get("author", "").strip()
+
+        if author:
+            queryset = queryset.filter(author_id=author)
+
         return queryset
 
     def perform_create(self, serializer):
