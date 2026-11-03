@@ -322,7 +322,20 @@ const handleVote = async (answerId, voteType) => {
         {/* ========================= */}
 
         <div className="question-header">
-          <h1>{question.title}</h1>
+          {editingQuestion ? (
+            <form className="qa-edit-form" onSubmit={saveQuestionEdit}>
+              <label>Question title</label>
+              <input value={questionTitle} onChange={(e) => setQuestionTitle(e.target.value)} maxLength={200} required />
+              <label>Question details</label>
+              <textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows="4" />
+              <div className="qa-management-actions">
+                <button type="submit" disabled={savingEdit}>{savingEdit ? "Saving..." : "Save changes"}</button>
+                <button type="button" className="qa-cancel-button" onClick={() => setEditingQuestion(false)}>Cancel</button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <h1>{question.title}</h1>
 
           <div className="question-meta-row">
             <span>
@@ -339,8 +352,14 @@ const handleVote = async (answerId, voteType) => {
             )}
           </div>
 
-          {question.body && (
-            <p className="question-body">{question.body}</p>
+              {question.body && <p className="question-body">{question.body}</p>}
+              {canManageQuestion && (
+                <div className="qa-management-actions">
+                  <button type="button" onClick={startQuestionEdit}>Edit question</button>
+                  <button type="button" className="qa-delete-button" onClick={deleteQuestion}>Delete question</button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -459,7 +478,16 @@ const handleVote = async (answerId, voteType) => {
                     )}
                   </div>
 
-                  <p className="answer-body">{answer.body}</p>
+                  {editingAnswerId === answer.id ? (
+                    <form className="qa-edit-form" onSubmit={(e) => saveAnswerEdit(e, answer.id)}>
+                      <label>Edit answer</label>
+                      <textarea value={editedAnswerBody} onChange={(e) => setEditedAnswerBody(e.target.value)} rows="4" required />
+                      <div className="qa-management-actions">
+                        <button type="submit" disabled={savingEdit}>{savingEdit ? "Saving..." : "Save changes"}</button>
+                        <button type="button" className="qa-cancel-button" onClick={() => setEditingAnswerId(null)}>Cancel</button>
+                      </div>
+                    </form>
+                  ) : <p className="answer-body">{answer.body}</p>}
 
                   <div className="answer-actions">
                     <div className="vote-controls">
@@ -493,6 +521,13 @@ const handleVote = async (answerId, voteType) => {
                         ▼ {answer.dislikes || 0}
                       </button>
                     </div>
+
+                    {(isAdmin || Number(user?.id) === Number(answer.author)) && !answer.is_ai_generated && editingAnswerId !== answer.id && (
+                      <div className="qa-management-actions">
+                        <button type="button" onClick={() => startAnswerEdit(answer)}>Edit</button>
+                        <button type="button" className="qa-delete-button" onClick={() => deleteAnswer(answer.id)}>Delete</button>
+                      </div>
+                    )}
 
                     {isQuestionOwner &&
                       !answer.is_accepted && (
