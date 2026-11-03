@@ -5,6 +5,7 @@ from .views import (
     QuestionListCreateView,
     QuestionDetailView,
     AnswerCreateView,
+    AnswerDetailView,
     AIAnswerView,
     AnswerVoteView,
     AcceptAnswerView,
@@ -37,6 +38,11 @@ urlpatterns = [
         "questions/<int:question_id>/suggestions/",
         PropertySuggestionsView.as_view(),
         name="property-suggestions",
+    ),
+    path(
+        "answers/<int:pk>/",
+        AnswerDetailView.as_view(),
+        name="answer-detail",
     ),
     path(
         "answers/<int:answer_id>/like/",
