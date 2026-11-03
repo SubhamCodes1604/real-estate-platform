@@ -24,7 +24,7 @@ from django.db.models import Count, Prefetch, Q
 
 class QuestionListCreateView(generics.ListCreateAPIView):
     serializer_class = QuestionSerializer
-    permission_classes = [IsContentOwnerOrAdmin]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         queryset = (
@@ -106,9 +106,7 @@ class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
     )
     serializer_class = QuestionSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-
+    permission_classes = [IsContentOwnerOrAdmin]
 
 
 class AnswerDetailView(generics.RetrieveUpdateDestroyAPIView):
