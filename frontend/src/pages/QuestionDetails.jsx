@@ -37,7 +37,6 @@ function QuestionDetails() {
   const [editedAnswerBody, setEditedAnswerBody] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const isAdmin = user?.role === "ADMIN";
-  const canManageQuestion = Boolean(isQuestionOwner || isAdmin);
 
   const isQuestionOwner =
     user &&
@@ -45,6 +44,7 @@ function QuestionDetails() {
     (user.id === question.author ||
       user.id === question.author_id ||
       user.username === question.author_username);
+  const canManageQuestion = Boolean(isQuestionOwner || isAdmin);
 
   // =========================
   // FETCH QUESTION
