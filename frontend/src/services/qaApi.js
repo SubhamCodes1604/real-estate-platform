@@ -33,6 +33,10 @@ export const qaApi = {
     api.post("/community/questions/", data),
 
   // TODO(backend): GET /community/questions/:id/
+  updateQuestion: (id, data) => api.patch(`/community/questions/${id}/`, data),
+  deleteQuestion: (id) => api.delete(`/community/questions/${id}/`),
+  updateAnswer: (id, data) => api.patch(`/community/answers/${id}/`, data),
+  deleteAnswer: (id) => api.delete(`/community/answers/${id}/`),
   getQuestion: (id) =>
     api.get(`/community/questions/${id}/`),
 

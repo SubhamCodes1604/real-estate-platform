@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import qaApi from "../services/qaApi";
 import "./QuestionDetails.css";
 
 function QuestionDetails() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
 
   const [question, setQuestion] = useState(null);
@@ -29,6 +30,13 @@ function QuestionDetails() {
   const [answerFormSuccess, setAnswerFormSuccess] = useState("");
 
   const [actionError, setActionError] = useState("");
+  const [editingQuestion, setEditingQuestion] = useState(false);
+  const [questionTitle, setQuestionTitle] = useState("");
+  const [questionText, setQuestionText] = useState("");
+  const [editingAnswerId, setEditingAnswerId] = useState(null);
+  const [editedAnswerBody, setEditedAnswerBody] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const isAdmin = user?.role === "ADMIN";
 
   const isQuestionOwner =
     user &&
@@ -36,6 +44,7 @@ function QuestionDetails() {
     (user.id === question.author ||
       user.id === question.author_id ||
       user.username === question.author_username);
+  const canManageQuestion = Boolean(isQuestionOwner || isAdmin);
 
   // =========================
   // FETCH QUESTION
@@ -192,6 +201,57 @@ function QuestionDetails() {
     }
   };
 
+  const startQuestionEdit = () => {
+    setQuestionTitle(question.title);
+    setQuestionText(question.body || "");
+    setEditingQuestion(true);
+    setActionError("");
+  };
+
+  const saveQuestionEdit = async (e) => {
+    e.preventDefault();
+    if (!questionTitle.trim()) return setActionError("Question title cannot be empty.");
+    try {
+      setSavingEdit(true);
+      const response = await qaApi.updateQuestion(id, { title: questionTitle.trim(), body: questionText.trim() });
+      setQuestion(response.data);
+      setEditingQuestion(false);
+      setActionError("");
+    } catch (err) { setActionError(err.response?.data?.detail || "Unable to update this question."); }
+    finally { setSavingEdit(false); }
+  };
+
+  const deleteQuestion = async () => {
+    if (!window.confirm("Delete this question and all its answers? This cannot be undone.")) return;
+    try { await qaApi.deleteQuestion(id); navigate("/questions"); }
+    catch (err) { setActionError(err.response?.data?.detail || "Unable to delete this question."); }
+  };
+
+  const startAnswerEdit = (answer) => {
+    setEditingAnswerId(answer.id);
+    setEditedAnswerBody(answer.body);
+    setActionError("");
+  };
+
+  const saveAnswerEdit = async (e, answerId) => {
+    e.preventDefault();
+    if (!editedAnswerBody.trim()) return setActionError("Answer cannot be empty.");
+    try {
+      setSavingEdit(true);
+      const response = await qaApi.updateAnswer(answerId, { body: editedAnswerBody.trim() });
+      setAnswers((previous) => previous.map((answer) => answer.id === answerId ? { ...answer, ...response.data } : answer));
+      setEditingAnswerId(null);
+      setActionError("");
+    } catch (err) { setActionError(err.response?.data?.detail || "Unable to update this answer."); }
+    finally { setSavingEdit(false); }
+  };
+
+  const deleteAnswer = async (answerId) => {
+    if (!window.confirm("Delete this answer? This cannot be undone.")) return;
+    try { await qaApi.deleteAnswer(answerId); setAnswers((previous) => previous.filter((answer) => answer.id !== answerId)); }
+    catch (err) { setActionError(err.response?.data?.detail || "Unable to delete this answer."); }
+  };
+
   // =========================
   // LIKE / DISLIKE
   // =========================
@@ -322,7 +382,20 @@ const handleVote = async (answerId, voteType) => {
         {/* ========================= */}
 
         <div className="question-header">
-          <h1>{question.title}</h1>
+          {editingQuestion ? (
+            <form className="qa-edit-form" onSubmit={saveQuestionEdit}>
+              <label>Question title</label>
+              <input value={questionTitle} onChange={(e) => setQuestionTitle(e.target.value)} maxLength={200} required />
+              <label>Question details</label>
+              <textarea value={questionText} onChange={(e) => setQuestionText(e.target.value)} rows="4" />
+              <div className="qa-management-actions">
+                <button type="submit" disabled={savingEdit}>{savingEdit ? "Saving..." : "Save changes"}</button>
+                <button type="button" className="qa-cancel-button" onClick={() => setEditingQuestion(false)}>Cancel</button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <h1>{question.title}</h1>
 
           <div className="question-meta-row">
             <span>
@@ -339,8 +412,14 @@ const handleVote = async (answerId, voteType) => {
             )}
           </div>
 
-          {question.body && (
-            <p className="question-body">{question.body}</p>
+              {question.body && <p className="question-body">{question.body}</p>}
+              {canManageQuestion && (
+                <div className="qa-management-actions">
+                  <button type="button" onClick={startQuestionEdit}>Edit question</button>
+                  <button type="button" className="qa-delete-button" onClick={deleteQuestion}>Delete question</button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -459,7 +538,16 @@ const handleVote = async (answerId, voteType) => {
                     )}
                   </div>
 
-                  <p className="answer-body">{answer.body}</p>
+                  {editingAnswerId === answer.id ? (
+                    <form className="qa-edit-form" onSubmit={(e) => saveAnswerEdit(e, answer.id)}>
+                      <label>Edit answer</label>
+                      <textarea value={editedAnswerBody} onChange={(e) => setEditedAnswerBody(e.target.value)} rows="4" required />
+                      <div className="qa-management-actions">
+                        <button type="submit" disabled={savingEdit}>{savingEdit ? "Saving..." : "Save changes"}</button>
+                        <button type="button" className="qa-cancel-button" onClick={() => setEditingAnswerId(null)}>Cancel</button>
+                      </div>
+                    </form>
+                  ) : <p className="answer-body">{answer.body}</p>}
 
                   <div className="answer-actions">
                     <div className="vote-controls">
@@ -493,6 +581,13 @@ const handleVote = async (answerId, voteType) => {
                         ▼ {answer.dislikes || 0}
                       </button>
                     </div>
+
+                    {(isAdmin || Number(user?.id) === Number(answer.author)) && !answer.is_ai_generated && editingAnswerId !== answer.id && (
+                      <div className="qa-management-actions">
+                        <button type="button" onClick={() => startAnswerEdit(answer)}>Edit</button>
+                        <button type="button" className="qa-delete-button" onClick={() => deleteAnswer(answer.id)}>Delete</button>
+                      </div>
+                    )}
 
                     {isQuestionOwner &&
                       !answer.is_accepted && (

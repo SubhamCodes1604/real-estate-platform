@@ -612,3 +612,104 @@ class HasAcceptedAnswerTest(CommunityTestBase):
         self.assertTrue(
             results[0]["has_accepted_answer"]
         )
+
+
+class QuestionAnswerManagementTest(CommunityTestBase):
+
+    def authenticate(self, username, password="TestPass123!"):
+        token = self.get_jwt_token(username, password)
+        self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    def test_question_owner_can_edit_question(self):
+        self.authenticate("testuser")
+        response = self.client.patch(
+            f"/api/community/questions/{self.question.id}/",
+            {"title": "Updated question"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.question.refresh_from_db()
+        self.assertEqual(self.question.title, "Updated question")
+
+    def test_other_user_cannot_edit_question(self):
+        self.authenticate("testuser2")
+        response = self.client.patch(
+            f"/api/community/questions/{self.question.id}/",
+            {"title": "Not allowed"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_question_owner_can_delete_question(self):
+        self.authenticate("testuser")
+        response = self.client.delete(
+            f"/api/community/questions/{self.question.id}/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Question.objects.filter(pk=self.question.id).exists())
+
+    def test_answer_owner_can_edit_answer(self):
+        self.authenticate("testuser2")
+        response = self.client.patch(
+            f"/api/community/answers/{self.answer.id}/",
+            {"body": "Updated answer"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.answer.refresh_from_db()
+        self.assertEqual(self.answer.body, "Updated answer")
+
+    def test_other_user_cannot_edit_answer(self):
+        self.authenticate("testuser")
+        response = self.client.patch(
+            f"/api/community/answers/{self.answer.id}/",
+            {"body": "Not allowed"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_answer_owner_can_delete_answer(self):
+        self.authenticate("testuser2")
+        response = self.client.delete(
+            f"/api/community/answers/{self.answer.id}/"
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Answer.objects.filter(pk=self.answer.id).exists())
+
+    def test_ai_answer_cannot_be_managed(self):
+        self.authenticate("testuser")
+        response = self.client.patch(
+            f"/api/community/answers/{self.ai_answer.id}/",
+            {"body": "Attempted change"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_admin_can_moderate_question_and_answer(self):
+        User.objects.create_superuser(
+            username="admin",
+            password="AdminPass123!",
+            email="admin@example.com",
+            role="ADMIN",
+        )
+        self.authenticate("admin", "AdminPass123!")
+        question_response = self.client.patch(
+            f"/api/community/questions/{self.question.id}/",
+            {"title": "Admin moderated title"},
+            format="json",
+        )
+        answer_response = self.client.patch(
+            f"/api/community/answers/{self.answer.id}/",
+            {"body": "Admin moderated answer"},
+            format="json",
+        )
+        self.assertEqual(question_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(answer_response.status_code, status.HTTP_200_OK)
+
+    def test_anonymous_user_cannot_edit_or_delete(self):
+        response = self.client.patch(
+            f"/api/community/questions/{self.question.id}/",
+            {"title": "Anonymous edit"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

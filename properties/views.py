@@ -365,14 +365,27 @@ class MLPropertyRecommendationView(APIView):
         for item in recommendations:
             property_obj = item["property"]
 
+            image_url = None
+            if property_obj.image:
+                try:
+                    image_url = request.build_absolute_uri(
+                        property_obj.image.url
+                    )
+                except (ValueError, OSError):
+                    image_url = None
+
             results.append({
                 "id": property_obj.id,
                 "title": property_obj.title,
                 "price": property_obj.price,
                 "city": property_obj.city,
+                "state": property_obj.state,
                 "property_type": property_obj.property_type,
                 "bedrooms": property_obj.bedrooms,
                 "bathrooms": property_obj.bathrooms,
+                "area_sqft": property_obj.area_sqft,
+                "is_featured": property_obj.is_featured,
+                "image": image_url,
                 "similarity_score": round(item["score"], 4)
             })
 
@@ -425,14 +438,27 @@ class PersonalizedMLRecommendationView(APIView):
 
             reason = "Recommended because it " + ", ".join(reasons) + "."
 
+            image_url = None
+            if property_obj.image:
+                try:
+                    image_url = request.build_absolute_uri(
+                        property_obj.image.url
+                    )
+                except (ValueError, OSError):
+                    image_url = None
+
             results.append({
                 "id": property_obj.id,
                 "title": property_obj.title,
                 "price": property_obj.price,
                 "city": property_obj.city,
+                "state": property_obj.state,
                 "property_type": property_obj.property_type,
                 "bedrooms": property_obj.bedrooms,
                 "bathrooms": property_obj.bathrooms,
+                "area_sqft": property_obj.area_sqft,
+                "is_featured": property_obj.is_featured,
+                "image": image_url,
                 "similarity_score": item["score"],
                 "text_score": text_score,
                 "numerical_score": numerical_score,

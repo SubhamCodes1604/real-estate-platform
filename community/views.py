@@ -10,6 +10,7 @@ from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
     IsAuthenticatedOrReadOnly,
+    BasePermission,
 )
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -55,6 +56,11 @@ class QuestionListCreateView(generics.ListCreateAPIView):
                     | Q(body__icontains=keyword)
                 )
 
+        author = self.request.query_params.get("author", "").strip()
+
+        if author:
+            queryset = queryset.filter(author_id=author)
+
         return queryset
 
     def perform_create(self, serializer):
@@ -62,7 +68,23 @@ class QuestionListCreateView(generics.ListCreateAPIView):
 
 
 
-class QuestionDetailView(generics.RetrieveAPIView):
+class IsContentOwnerOrAdmin(BasePermission):
+    """Allow public reads, but restrict edits and deletes to the author or admin."""
+
+    def has_permission(self, request, view):
+        if request.method in ("GET", "HEAD", "OPTIONS"):
+            return True
+        return bool(request.user and request.user.is_authenticated)
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in ("GET", "HEAD", "OPTIONS"):
+            return True
+        if getattr(request.user, "role", None) == "ADMIN":
+            return True
+        return obj.author_id == request.user.id
+
+
+class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = (
         Question.objects.select_related("author")
         .annotate(
@@ -89,9 +111,20 @@ class QuestionDetailView(generics.RetrieveAPIView):
         )
     )
     serializer_class = QuestionSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsContentOwnerOrAdmin]
 
 
+class AnswerDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = AnswerSerializer
+    permission_classes = [IsContentOwnerOrAdmin]
+    queryset = Answer.objects.filter(is_ai_generated=False).select_related(
+        "author", "question"
+    )
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["request"] = self.request
+        return context
 
 
 class AnswerCreateView(generics.ListCreateAPIView):

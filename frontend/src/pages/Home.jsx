@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import PropertyCard from "../components/PropertyCard";
 import "./Home.css";
 
 const PROPERTY_TYPES = [
@@ -238,9 +239,6 @@ function Home() {
           </div>
         )}
       </section>
-
-      {/* ========================= */}
-      {/* RECENTLY LISTED */}
       {/* ========================= */}
 
       <section className="home-section">
@@ -321,85 +319,6 @@ function Home() {
         </div>
       </section>
     </div>
-  );
-}
-
-/* ========================= */
-/* SHARED PROPERTY CARD */
-/* ========================= */
-
-function PropertyCard({ property }) {
-  const formatPrice = (price) => {
-    const num = Number(price);
-
-    if (num >= 10000000) {
-      return `₹ ${(num / 10000000).toFixed(2)} Cr`;
-    }
-
-    if (num >= 100000) {
-      return `₹ ${(num / 100000).toFixed(2)} L`;
-    }
-
-    return `₹ ${num.toLocaleString("en-IN")}`;
-  };
-
-  const typeLabel =
-    {
-      FLAT: "Flat",
-      HOUSE: "House",
-      VILLA: "Villa",
-      PLOT: "Plot",
-    }[property.property_type] || property.property_type;
-
-  return (
-    <Link
-      to={`/properties/${property.id}`}
-      className="home-property-card"
-    >
-      <div className="home-property-image-wrap">
-        {property.image ? (
-          <img
-            src={property.image}
-            alt={property.title}
-            className="home-property-image"
-          />
-        ) : (
-          <div className="home-property-no-image">
-            No Image Available
-          </div>
-        )}
-
-        {property.is_featured && (
-          <span className="home-property-badge">
-            Featured
-          </span>
-        )}
-      </div>
-
-      <div className="home-property-body">
-        <span className="home-property-type">
-          {typeLabel}
-        </span>
-
-        <h3 className="home-property-title">
-          {property.title}
-        </h3>
-
-        <p className="home-property-price">
-          {formatPrice(property.price)}
-        </p>
-
-        <p className="home-property-location">
-          {property.city}, {property.state}
-        </p>
-
-        <div className="home-property-features">
-          <span>{property.bedrooms} Beds</span>
-          <span>{property.bathrooms} Baths</span>
-          <span>{property.area_sqft} sq.ft</span>
-        </div>
-      </div>
-    </Link>
   );
 }
 
