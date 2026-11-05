@@ -1,5 +1,20 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
+
+
+class CustomUserManager(UserManager):
+    """Keep Django superusers aligned with the application's ADMIN role."""
+
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        # Django's createsuperuser command sets staff/superuser flags, but it
+        # does not know about this project's separate role field.
+        extra_fields["role"] = "ADMIN"
+        return super().create_superuser(
+            username=username,
+            email=email,
+            password=password,
+            **extra_fields,
+        )
 
 
 class User(AbstractUser):
@@ -13,6 +28,8 @@ class User(AbstractUser):
         (AGENT, "Agent"),
         (ADMIN, "Admin"),
     )
+
+    objects = CustomUserManager()
 
     role = models.CharField(
         max_length=20,
