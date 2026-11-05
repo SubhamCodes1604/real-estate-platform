@@ -305,3 +305,18 @@ class AdminUserManagementTest(AuthTestBase):
         self.client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
         response = self.client.get(f"/api/accounts/admin/users/{self.user.pk}/")
         self.assertNotIn("password", response.data)
+
+
+class SuperuserRoleTest(TestCase):
+
+    def test_create_superuser_gets_admin_role(self):
+        admin = User.objects.create_superuser(
+            username="createdsuperuser",
+            email="admin@example.com",
+            password="StrongTestPass123!",
+        )
+
+        self.assertEqual(admin.role, User.ADMIN)
+        self.assertTrue(admin.is_staff)
+        self.assertTrue(admin.is_superuser)
+        self.assertTrue(admin.is_active)
