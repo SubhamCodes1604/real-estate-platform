@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../services/api";
+import { getAllMyProperties } from "../services/propertyApi";
 import "./MyProperties.css";
 
 const formatPrice = (price) => {
@@ -19,14 +19,7 @@ function MyProperties() {
   useEffect(() => {
     const fetchMyProperties = async () => {
       try {
-        const response = await api.get(
-          "/properties/my-properties/"
-        );
-
-        const data = Array.isArray(response.data)
-          ? response.data
-          : response.data.results || [];
-
+        const data = await getAllMyProperties();
         setProperties(data);
       } catch (err) {
         console.error("My properties error:", err);
