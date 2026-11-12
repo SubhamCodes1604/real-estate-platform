@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../services/api";
+import { getAllMyProperties } from "../services/propertyApi";
 import { useAuth } from "../context/AuthContext";
 import "./AgentDashboard.css";
 
@@ -23,19 +24,13 @@ function AgentDashboard() {
   useEffect(() => {
     const fetchAgentDashboard = async () => {
       try {
-        const propertiesResponse = await api.get(
-          "/properties/my-properties/"
-        );
+        const propertiesDataPromise = getAllMyProperties();
 
         const inquiriesResponse = await api.get(
           "/inquiries/received/"
         );
 
-        const propertiesData = Array.isArray(
-          propertiesResponse.data
-        )
-          ? propertiesResponse.data
-          : propertiesResponse.data.results || [];
+        const propertiesData = await propertiesDataPromise;
 
         const inquiriesData = Array.isArray(
           inquiriesResponse.data
