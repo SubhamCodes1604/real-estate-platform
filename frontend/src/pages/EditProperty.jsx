@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
+import { getAllMyProperties } from "../services/propertyApi";
 import "./EditProperty.css";
 
 function EditProperty() {
@@ -38,13 +39,7 @@ function EditProperty() {
   useEffect(() => {
     const fetchProperty = async () => {
       try {
-        const response = await api.get(
-          "/properties/my-properties/"
-        );
-
-        const properties = Array.isArray(response.data)
-          ? response.data
-          : response.data.results || [];
+        const properties = await getAllMyProperties();
 
         const property = properties.find(
           (item) => String(item.id) === String(id)
