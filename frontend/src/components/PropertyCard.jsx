@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import "./PropertyCard.css";
 
 const formatPrice = (price) => {
   const num = Number(price);
